@@ -3,29 +3,13 @@ const {parseTrim, compileTrim} = require('../dist/trim')
 const {compileBasm} = require('../dist/basm')
 const {pad, Pos} = require('../dist/util')
 
-const source = `
-  (ADD (CALLDATALOAD 0x00 0x03) 0x01)
-  (MSTORE 0x40 _)
-  (RETURN 0x40 0x20)
-  STOP
-`
-
-// Goal:
-const expectedBasm = `
-  PUSH1 0x01
-  PUSH1 0x03
-  PUSH1 0x00
-  CALLDATALOAD
-  ADD
-  PUSH1 0x40
-  MSTORE
-  PUSH1 0x20
-  PUSH1 0x40
-  RETURN
-  STOP
-`
-
 o('parse', function () {
+  const source = `
+    (ADD (CALLDATALOAD 0x00 0x03) 0x01)
+    (MSTORE 0x40 _)
+    (RETURN 0x40 0x20)
+    STOP
+  `
   o(parseTrim(source, new Pos(), { topLevel: true })).deepEquals([
     ['ADD', ['CALLDATALOAD', '0x00', '0x03'], '0x01'],
     ['MSTORE', '0x40', '_'],
@@ -34,8 +18,81 @@ o('parse', function () {
   ])
 })
 
-o('compile', function () {
-  o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+o.spec('compile', function() {
+  o('basic', function () {
+    const source = `
+      (ADD (CALLDATALOAD 0x00 0x03) 0x01)
+      (MSTORE 0x40 _)
+      (RETURN 0x40 0x20)
+      STOP
+    `
+    const expectedBasm = `
+      PUSH1 0x01
+      PUSH1 0x03
+      PUSH1 0x00
+      CALLDATALOAD
+      ADD
+      PUSH1 0x40
+      MSTORE
+      PUSH1 0x20
+      PUSH1 0x40
+      RETURN
+      STOP
+    `
+    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+  })
+
+  o('first level swap 1', function () {
+    const source = `
+      PUSH1 0x40
+      (MSTORE _ 0x01)
+    `
+    const expectedBasm = `
+      PUSH1 0x40
+      PUSH1 0x01
+      SWAP1
+      MSTORE
+    `
+    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+  })
+
+  o('first level swap 2', function () {
+    const source = `
+      PUSH1 0x03
+      (ADDMOD _ 0x02 0x01)
+    `
+    const expectedBasm = `
+      PUSH1 0x03
+      PUSH1 0x01
+      PUSH1 0x02
+      DUP1
+      SWAP3
+      ADDMOD
+      POP
+    `
+    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+  })
+
+  o('first level swap 6', function () {
+    const source = `
+      PUSH1 0x07
+      (CALL _ 0x06 0x05 0x04 0x03 0x02 0x01)
+    `
+    const expectedBasm = `
+      PUSH1 0x07
+      PUSH1 0x01
+      PUSH1 0x02
+      PUSH1 0x03
+      PUSH1 0x04
+      PUSH1 0x05
+      PUSH1 0x06
+      DUP1
+      SWAP7
+      CALL
+      POP
+    `
+    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+  })
 })
 
 const opcodes = [

@@ -1,4 +1,4 @@
-import { OpcodeDef } from "./types"
+import { OpcodeDef, OpcodesByAsm } from "./types"
 import { getOpcodesByAsm, notNullish, Pos } from "./util"
 
 const WS = /(\s|\n|\r)/
@@ -21,8 +21,7 @@ type CompileOptions = {
 export function compileTrim(source: string, options: CompileOptions) {
   const program = parseTrim(source, new Pos(), { topLevel: true })
   const ast = generateBytecodeAst(program, options.opcodes)
-  console.log("AST", require('util').inspect(ast, { depth: 10 }))
-  return '0x' + generateBytecode(ast).join('')
+  return '0x' + generateBytecode(ast, options.opcodes).join('')
 }
 
 
@@ -37,7 +36,6 @@ export function parseTrim(source: string, pos: Pos, options: ParseOptions = {}):
     const c = source[pos.i]
     if (!c) break
 
-    // console.log('c', c)
     if (c === ')') {
       pos.newcol()
       return parsed
@@ -67,7 +65,6 @@ function readAtom(source: string, pos: Pos) {
   }
   const end = pos.i
   const atom = source.slice(start, end)
-  // console.log("ATOM", start, end, atom)
   return atom
 }
 
@@ -78,8 +75,7 @@ function generateBytecodeAst(sexps: ToplevelSexp, opcodes: OpcodeDef[]) {
   return sexps.map(exp => _generateBytecodeAst(exp, opcodesByAsm, true))
 }
 
-function _generateBytecodeAst(exp: SexpNode, opcodesByAsm: Record<string, OpcodeDef>, isTopLevel: boolean): BytecodeAstNode {
-  console.log('sexp', exp)
+function _generateBytecodeAst(exp: SexpNode, opcodesByAsm: OpcodesByAsm, isTopLevel: boolean): BytecodeAstNode {
   if (Array.isArray(exp)) {
     return {
       type: 'exp',
@@ -90,7 +86,6 @@ function _generateBytecodeAst(exp: SexpNode, opcodesByAsm: Record<string, Opcode
     return { type: 'top' }
   }
   else if (HEX_VAL.test(exp)) {
-    console.log("LALA", exp, isTopLevel)
     let bytes = exp.slice(2)
     if (bytes.length % 2 === 1) {
       bytes = '0' + bytes
@@ -116,13 +111,23 @@ function _generateBytecodeAst(exp: SexpNode, opcodesByAsm: Record<string, Opcode
 
 // 0x0f | 0x02 (0x01 (0x03 _ DIV) CALLDATALOAD) ADD
 
-function generateBytecode(ast: BytecodeAstNode[]): string[] {
+function generateBytecode(ast: BytecodeAstNode[], opcodes: OpcodeDef[]): string[] {
+  const opcodesByAsm = getOpcodesByAsm(opcodes)
+
   return ast.flatMap((node, i) => {
     if (node.type === 'op' || node.type === 'literal') {
       return node.bytes
     }
     else if (node.type === 'exp') {
-      return _generateBytecode(node.nodes, { seenTop: false, level: 0 })
+      const trailingBytes: string[] = []
+      return _generateBytecode(node.nodes, {
+        seenTop: false,
+        level: 0,
+        opcodesByAsm,
+        append(bytes) {
+          trailingBytes.push(bytes)
+        }
+      }).concat(trailingBytes)
     }
     else if (node.type === 'top') {
       throw new Error(`[trim] Top expressions not allowed on top level`)
@@ -133,15 +138,27 @@ function generateBytecode(ast: BytecodeAstNode[]): string[] {
   })
 }
 
-function _generateBytecode(ast: BytecodeAstNode[], ctx: { seenTop: boolean, level: number }): string[] {
+function _generateBytecode(ast: BytecodeAstNode[], ctx: {
+  seenTop: boolean
+  level: number
+  opcodesByAsm: OpcodesByAsm
+  append: (bytes: string) => void
+}): string[] {
   let seenTop = ctx.seenTop
   return ast.slice().reverse().flatMap((node, i) => {
-    console.log('gen', node)
     if (node.type === 'top' && seenTop) {
       throw new Error(`[trim] Multiple top expressions not allowed`)
     }
-    else if (node.type === 'top' && (i > 0 || ctx.level > 0)) {
-      throw new Error(`[trim] Deep top expression (TODO)`)
+    else if (node.type === 'top' && ctx.level === 0) {
+      seenTop = true
+      if (i === 0) return []
+      if (i === 1) return [ctx.opcodesByAsm.SWAP1.hex]
+
+      ctx.append(ctx.opcodesByAsm.POP.hex)
+      return [ctx.opcodesByAsm.DUP1.hex, ctx.opcodesByAsm['SWAP' + (i+1)].hex]
+    }
+    else if (node.type === 'top' && ctx.level > 0) {
+      throw new Error(`[scat] Deep top expression (TODO)`)
     }
     else if (node.type === 'top') {
       // Top expressions as the last item in an sexp naturally uses the top item in the stack
@@ -155,7 +172,7 @@ function _generateBytecode(ast: BytecodeAstNode[], ctx: { seenTop: boolean, leve
       return node.push ? [node.bytes, node.pushBytes!] : node.bytes
     }
     else if (node.type === 'exp') {
-      return _generateBytecode(node.nodes, { seenTop, level: ctx.level + 1 })
+      return _generateBytecode(node.nodes, { seenTop, level: ctx.level + 1, opcodesByAsm: ctx.opcodesByAsm })
     }
     else {
       throw new Error(`[trim] Unexpected node type (2)`)
