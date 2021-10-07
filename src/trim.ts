@@ -1,5 +1,5 @@
 import { OpcodeDef, OpcodesByAsm } from "./types"
-import { getOpcodesByAsm, notNullish, Pos } from "./util"
+import { getOpcodesByAsm, notNullish, prop, Prop, Pos } from "./util"
 
 const WS = /(\s|\n|\r)/
 
@@ -119,9 +119,10 @@ function generateBytecode(ast: BytecodeAstNode[], opcodes: OpcodeDef[]): string[
       return node.bytes
     }
     else if (node.type === 'exp') {
+      let seenTop = prop(false)
       const trailingBytes: string[] = []
       return _generateBytecode(node.nodes, {
-        seenTop: false,
+        seenTop,
         level: 0,
         opcodesByAsm,
         append(bytes) {
@@ -139,18 +140,17 @@ function generateBytecode(ast: BytecodeAstNode[], opcodes: OpcodeDef[]): string[
 }
 
 function _generateBytecode(ast: BytecodeAstNode[], ctx: {
-  seenTop: boolean
   level: number
-  opcodesByAsm: OpcodesByAsm
   append: (bytes: string) => void
+  seenTop: Prop<boolean>
+  opcodesByAsm: OpcodesByAsm
 }): string[] {
-  let seenTop = ctx.seenTop
   return ast.slice().reverse().flatMap((node, i) => {
-    if (node.type === 'top' && seenTop) {
+    if (node.type === 'top' && ctx.seenTop()) {
       throw new Error(`[trim] Multiple top expressions not allowed`)
     }
     else if (node.type === 'top' && ctx.level === 0) {
-      seenTop = true
+      ctx.seenTop(true)
       if (i === 0) return []
       if (i === 1) return [ctx.opcodesByAsm.SWAP1.hex]
 
@@ -162,7 +162,7 @@ function _generateBytecode(ast: BytecodeAstNode[], ctx: {
     }
     else if (node.type === 'top') {
       // Top expressions as the last item in an sexp naturally uses the top item in the stack
-      seenTop = true
+      ctx.seenTop(true)
       return []
     }
     else if (node.type === 'op') {
@@ -172,7 +172,7 @@ function _generateBytecode(ast: BytecodeAstNode[], ctx: {
       return node.push ? [node.bytes, node.pushBytes!] : node.bytes
     }
     else if (node.type === 'exp') {
-      return _generateBytecode(node.nodes, { seenTop, level: ctx.level + 1, opcodesByAsm: ctx.opcodesByAsm })
+      return _generateBytecode(node.nodes, { ...ctx, level: ctx.level + 1 })
     }
     else {
       throw new Error(`[trim] Unexpected node type (2)`)

@@ -3,7 +3,7 @@ const {parseTrim, compileTrim} = require('../dist/trim')
 const {compileBasm} = require('../dist/basm')
 const {pad, Pos} = require('../dist/util')
 
-o('parse', function () {
+o('trim parse', function () {
   const source = `
     (ADD (CALLDATALOAD 0x00 0x03) 0x01)
     (MSTORE 0x40 _)
@@ -18,7 +18,7 @@ o('parse', function () {
   ])
 })
 
-o.spec('compile', function() {
+o.spec('trim compile', function() {
   o('basic', function () {
     const source = `
       (ADD (CALLDATALOAD 0x00 0x03) 0x01)
@@ -92,6 +92,15 @@ o.spec('compile', function() {
       POP
     `
     o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+  })
+})
+
+
+o.spec('trim errors', function () {
+  const compile = (src) => compileTrim(src, { opcodes })
+
+  o.only('multiple tops', function () {
+    o(() => compile(`(ADD _ _)`)).throws('[trim] Multiple top expressions not allowed')
   })
 })
 
