@@ -93,13 +93,70 @@ o.spec('trim compile', function() {
     `
     o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
   })
+
+  o('push label', function () {
+    const source = `
+      PUSH1 0x01
+      (PUSH2 #foo)
+      PUSH1 0x02
+      #foo
+      (ADD #foo #foo)
+      PUSH1 0x03
+    `
+    const expectedBasm = `
+      PUSH1 0x01
+      PUSH2 0x0008
+      PUSH1 0x02
+
+      PUSH2 0x0008
+      PUSH2 0x0008
+      ADD
+      PUSH1 0x03
+    `
+    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+  })
+
+  o('full example 1', function () {
+    const source = `
+      (PUSH2 #runtime)
+      DUP1
+      (CODECOPY 0x00 0x0c _)
+      (RETURN 0x00 _)
+      STOP
+
+      #runtime
+      (ADD 0x01 (CALLDATALOAD 0x00))
+      (MSTORE 0x40 _)
+      (RETURN 0x40 0x20)
+    `
+    const expectedBasm = `
+      PUSH2 0x000e
+      DUP1
+      PUSH1 0x0c
+      PUSH1 0x00
+      CODECOPY
+      PUSH1 0x00
+      RETURN
+      STOP
+      PUSH1 0x00
+      CALLDATALOAD
+      PUSH1 0x01
+      ADD
+      PUSH1 0x40
+      MSTORE
+      PUSH1 0x20
+      PUSH1 0x40
+      RETURN
+    `
+    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+  })
 })
 
 
 o.spec('trim errors', function () {
   const compile = (src) => compileTrim(src, { opcodes })
 
-  o.only('multiple tops', function () {
+  o('multiple tops', function () {
     o(() => compile(`(ADD _ _)`)).throws('[trim] Multiple top expressions not allowed')
   })
 })
