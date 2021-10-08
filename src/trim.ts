@@ -50,6 +50,9 @@ export function parseTrim(source: string, pos: Pos, options: ParseOptions = {}):
 }
 
 function readAtom(source: string, pos: Pos) {
+  if (source[pos.i] === '"') {
+    return readString(source, pos)
+  }
   const start = pos.i
   while (pos.i < source.length) {
     const c = source[pos.i]
@@ -57,6 +60,28 @@ function readAtom(source: string, pos: Pos) {
       break
     }
     pos.push(source)
+  }
+  const end = pos.i
+  const atom = source.slice(start, end)
+  return atom
+}
+
+function readString(source: string, pos: Pos) {
+  if (source[pos.i] !== '"') {
+    throw new Error(`[trim] Expected starting quote \`"\``)
+  }
+  const start = pos.i
+  pos.newcol()
+  while (pos.i < source.length) {
+    const c = source[pos.i]
+    if (c === '\n' || c === '\r') {
+      throw new Error(`[trim] Expected end quote \`"\`, reached newline instead`)
+    }
+    if (c === '"') {
+      pos.newcol()
+      break
+    }
+    pos.newcol()
   }
   const end = pos.i
   const atom = source.slice(start, end)
@@ -108,6 +133,17 @@ function _generateBytecodeAst(exp: SexpNode, opcodesByAsm: OpcodesByAsm, ctx: {
   else if (exp[0] === '#') {
     return { type: 'label', name: exp }
   }
+  else if (exp.startsWith('"') && exp.endsWith('"')) {
+    const str = exp.slice(1, exp.length-1)
+    const pushBytes = Buffer.from(str).toString('hex')
+    console.log("GOGOGO", str, pushBytes)
+    return {
+      type: 'op',
+      bytes: opcodesByAsm['PUSH' + pushBytes.length/2].hex,
+      push: true,
+      pushBytes,
+    }
+  }
   else if (opcodesByAsm[exp]) {
     const op = opcodesByAsm[exp]
     return { type: 'op', bytes: op.hex, push: op.asm.startsWith('PUSH') }
@@ -156,7 +192,7 @@ function generateBytecode(ast: BytecodeAstNode[], opcodes: OpcodeDef[]): string[
       throw new Error(`[trim] Top expressions not allowed on top level`)
     }
     else if (node.type === 'label') {
-      labels[node.name] = pc() + 1
+      labels[node.name] = pc()
       return []
     }
     else {

@@ -105,11 +105,11 @@ o.spec('trim compile', function() {
     `
     const expectedBasm = `
       PUSH1 0x01
-      PUSH2 0x0008
+      PUSH2 0x0007
       PUSH1 0x02
 
-      PUSH2 0x0008
-      PUSH2 0x0008
+      PUSH2 0x0007
+      PUSH2 0x0007
       ADD
       PUSH1 0x03
     `
@@ -118,6 +118,7 @@ o.spec('trim compile', function() {
 
   o('full example 1', function () {
     const source = `
+      (SSTORE 0x00 "Hello, Trim!")
       (PUSH2 #runtime)
       DUP1
       (CODECOPY 0x00 0x0c _)
@@ -130,7 +131,10 @@ o.spec('trim compile', function() {
       (RETURN 0x40 0x20)
     `
     const expectedBasm = `
-      PUSH2 0x000e
+      PUSH12 0x48656c6c6f2c205472696d21
+      PUSH1 0x00
+      SSTORE
+      PUSH2 0x001d
       DUP1
       PUSH1 0x0c
       PUSH1 0x00
