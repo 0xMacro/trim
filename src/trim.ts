@@ -39,6 +39,9 @@ export function parseTrim(source: string, pos: Pos, options: ParseOptions = {}):
       pos.newcol()
       parsed.push(parseTrim(source, pos))
     }
+    else if (c === ';') {
+      skipComment(source, pos)
+    }
     else {
       parsed.push(readAtom(source, pos))
     }
@@ -56,7 +59,7 @@ function readAtom(source: string, pos: Pos) {
   const start = pos.i
   while (pos.i < source.length) {
     const c = source[pos.i]
-    if (WS.test(c) || c === ')') {
+    if (WS.test(c) || c === ')' || c === ';') {
       break
     }
     pos.push(source)
@@ -86,6 +89,16 @@ function readString(source: string, pos: Pos) {
   const end = pos.i
   const atom = source.slice(start, end)
   return atom
+}
+
+function skipComment(source: string, pos: Pos) {
+  if (source[pos.i] !== ';') {
+    throw new Error(`[trim] Expected comment semicolon \`;\``)
+  }
+  while(pos.i < source.length && source[pos.i] !== '\n') {
+    pos.newcol()
+  }
+  pos.skipNewline(source)
 }
 
 const HEX_VAL = /^0x[0-9a-f]+$/
@@ -136,7 +149,6 @@ function _generateBytecodeAst(exp: SexpNode, opcodesByAsm: OpcodesByAsm, ctx: {
   else if (exp.startsWith('"') && exp.endsWith('"')) {
     const str = exp.slice(1, exp.length-1)
     const pushBytes = Buffer.from(str).toString('hex')
-    console.log("GOGOGO", str, pushBytes)
     return {
       type: 'op',
       bytes: opcodesByAsm['PUSH' + pushBytes.length/2].hex,

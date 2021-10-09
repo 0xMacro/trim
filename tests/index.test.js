@@ -116,6 +116,22 @@ o.spec('trim compile', function() {
     o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
   })
 
+  o('comments', function () {
+    const source = `
+PUSH1 0x01; Comment 1
+(ADD 0x02 0x03); Comment 2
+PUSH1 0x04
+    `
+    const expectedBasm = `
+      PUSH1 0x01
+      PUSH1 0x03
+      PUSH1 0x02
+      ADD
+      PUSH1 0x04
+    `
+    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+  })
+
   o('full example 1', function () {
     const source = `
       (SSTORE 0x00 "Hello, Trim!")
