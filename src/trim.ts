@@ -211,6 +211,17 @@ function generateBytecode(ast: BytecodeAstNode[], opcodes: OpcodeDef[]): string[
       throw new Error(`[trim] Unexpected node type '${(node as any).type}' (1)`)
     }
   })
+
+  // Handle special #runtime label
+  if (labels['#runtime']) {
+    // TODO: CONSIDER LABELS BEFORE RUNTIME
+    for (let name in labels) {
+      if (name !== '#runtime') {
+        labels[name] -= labels['#runtime']
+      }
+    }
+  }
+
   return ast2.map(node => typeof node === 'string' ? node : node())
 }
 

@@ -135,38 +135,71 @@ PUSH1 0x04
   o('full example 1', function () {
     const source = `
       (SSTORE 0x00 "Hello, Trim!")
-      (PUSH2 #runtime)
+      (SUB CODESIZE #runtime)
       DUP1
-      (CODECOPY 0x00 0x0c _)
+      (CODECOPY 0x00 #runtime _)
       (RETURN 0x00 _)
       STOP
 
       #runtime
-      (ADD 0x01 (CALLDATALOAD 0x00))
+      (CALLDATACOPY 0x1c 0x00 0x04)
+      (MLOAD 0x00)
+
+      DUP1
+      (EQ 0xcfae3217 _)
+      (JUMPI #greet _)
+
+      PUSH4 0xa4136862
+
+      (REVERT 0x00 0x00)
+
+      #greet
+      JUMPDEST
+      (SLOAD 0x00)
       (MSTORE 0x40 _)
       (RETURN 0x40 0x20)
+
+      #setGreeting
+      JUMPDEST
     `
     const expectedBasm = `
       PUSH12 0x48656c6c6f2c205472696d21
       PUSH1 0x00
       SSTORE
-      PUSH2 0x001d
+      PUSH2 0x0020
+      CODESIZE
+      SUB
       DUP1
-      PUSH1 0x0c
+      PUSH2 0x0020
       PUSH1 0x00
       CODECOPY
       PUSH1 0x00
       RETURN
       STOP
+      PUSH1 0x04
       PUSH1 0x00
-      CALLDATALOAD
-      PUSH1 0x01
-      ADD
+      PUSH1 0x1c
+      CALLDATACOPY
+      PUSH1 0x00
+      MLOAD
+      DUP1
+      PUSH4 0xcfae3217
+      EQ
+      PUSH2 0x001f
+      JUMPI
+      PUSH4 0xa4136862
+      PUSH1 0x00
+      PUSH1 0x00
+      REVERT
+      JUMPDEST
+      PUSH1 0x00
+      SLOAD
       PUSH1 0x40
       MSTORE
       PUSH1 0x20
       PUSH1 0x40
       RETURN
+      JUMPDEST
     `
     o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
   })
