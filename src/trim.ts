@@ -131,18 +131,6 @@ function _generateBytecodeAst(exp: SexpNode, opcodesByAsm: OpcodesByAsm, ctx: {
   else if (exp === '_') {
     return { type: 'top' }
   }
-  else if (HEX_VAL.test(exp)) {
-    let bytes = exp.slice(2)
-    if (bytes.length % 2 === 1) {
-      bytes = '0' + bytes
-    }
-    if (ctx.isTopLevel) {
-      return { type: 'literal', bytes }
-    }
-    else {
-      return { type: 'op', bytes: opcodesByAsm['PUSH' + bytes.length/2].hex, push: true, pushBytes: bytes }
-    }
-  }
   else if (exp[0] === '#') {
     return { type: 'label', name: exp }
   }
@@ -154,6 +142,18 @@ function _generateBytecodeAst(exp: SexpNode, opcodesByAsm: OpcodesByAsm, ctx: {
       bytes: opcodesByAsm['PUSH' + pushBytes.length/2].hex,
       push: true,
       pushBytes,
+    }
+  }
+  else if (HEX_VAL.test(exp)) {
+    let bytes = exp.slice(2)
+    if (bytes.length % 2 === 1) {
+      bytes = '0' + bytes
+    }
+    if (ctx.isTopLevel) {
+      return { type: 'literal', bytes }
+    }
+    else {
+      return { type: 'op', bytes: opcodesByAsm['PUSH' + bytes.length/2].hex, push: true, pushBytes: bytes }
     }
   }
   else if (opcodesByAsm[exp]) {
