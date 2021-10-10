@@ -124,7 +124,7 @@ function _generateBytecodeAst(exp: SexpNode, opcodesByAsm: OpcodesByAsm, ctx: {
       nodes[0].type === 'op' && nodes[0].bytes === opcodesByAsm.PUSH2.hex &&
       nodes[1].type === 'label'
     ) {
-      return { type: 'exp', nodes: [nodes[1]] }2
+      return { type: 'exp', nodes: [nodes[1]] }
     }
     return { type: 'exp', nodes }
   }
