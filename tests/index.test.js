@@ -1,5 +1,6 @@
 const o = require('ospec')
-const {parseTrim, compileTrim} = require('../dist/trim')
+const {compileTrim} = require('../dist/trim')
+const {parseTrim} = require('../dist/trim/parse')
 const {compileBasm} = require('../dist/basm')
 const {pad, Pos} = require('../dist/util')
 
@@ -97,7 +98,7 @@ o.spec('trim compile', function() {
   o('push label', function () {
     const source = `
       PUSH1 0x01
-      (PUSH2 #foo)
+      (push #foo)
       PUSH1 0x02
       #foo
       (ADD #foo #foo)
@@ -118,9 +119,9 @@ o.spec('trim compile', function() {
 
   o('comments', function () {
     const source = `
-PUSH1 0x01; Comment 1
-(ADD 0x02 0x03); Comment 2
-PUSH1 0x04
+      PUSH1 0x01; Comment 1
+      (ADD 0x02 0x03); Comment 2
+      PUSH1 0x04
     `
     const expectedBasm = `
       PUSH1 0x01
@@ -205,6 +206,29 @@ PUSH1 0x04
   })
 })
 
+o.spec('macros', function () {
+  o('push', function () {
+    const source = `
+      (push "ABC")
+    `
+    const expectedBasm = `
+      PUSH3 0x414243
+    `
+    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+  })
+
+  o('abi/function-id', function () {
+    const source = `
+      (EQ (abi/function-id "foo()") "ABC")
+    `
+    const expectedBasm = `
+      PUSH3 0x414243
+      PUSH4 0xc2985578
+      EQ
+    `
+    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+  })
+})
 
 o.spec('trim errors', function () {
   const compile = (src) => compileTrim(src, { opcodes })

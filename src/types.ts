@@ -1,3 +1,8 @@
+export type ToplevelSexp = SexpNode[]
+
+export type SexpNode =
+  | string
+  | SexpNode[]
 
 export type OpcodeDef = {
   hex: string
@@ -9,11 +14,20 @@ export type OpcodesByAsm = Record<string, OpcodeDef>
 export type BytecodeAstNode =
   | { type: 'op', bytes: string, push: boolean, pushBytes?: string }
   | { type: 'top' }
-  | { type: 'literal', bytes: string }
+  | { type: 'literal', subtype: 'hex' | 'string', value: string }
   | { type: 'label', name: string }
+  | { type: 'macro', name: string }
   | ExpNode
 
 export type ExpNode = {
   type: 'exp'
   nodes: BytecodeAstNode[]
+}
+
+export type MacroDefs = Record<string,MacroFn>
+
+export type MacroFn = (this: MacroCtx, ...args: BytecodeAstNode[]) => BytecodeAstNode[]
+
+export type MacroCtx = {
+  parseSexp: (sexp: SexpNode) => BytecodeAstNode
 }
