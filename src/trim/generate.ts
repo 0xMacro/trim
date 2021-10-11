@@ -145,7 +145,7 @@ function _generateBytecode(ast: BytecodeAstNode[], ctx: {
 
   return ast.slice().reverse().flatMap((node, i) => {
     if (node.type === 'top' && ctx.seenTop()) {
-      throw new Error(`[trim] Multiple top expressions not allowed`)
+      throw new Error(`[trim] Multiple top expressions (TODO)`)
     }
     else if (node.type === 'top' && ctx.level === 0) {
       ctx.seenTop(true)

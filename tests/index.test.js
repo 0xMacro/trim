@@ -206,6 +206,18 @@ o.spec('trim compile', function() {
   })
 })
 
+o.spec('strings', function () {
+  o('escape quote', function () {
+    const source = `
+      (push "A\\"C")
+    `
+    const expectedBasm = `
+      PUSH3 0x412243
+    `
+    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+  })
+})
+
 o.spec('macros', function () {
   o('push', function () {
     const source = `
@@ -234,7 +246,14 @@ o.spec('trim errors', function () {
   const compile = (src) => compileTrim(src, { opcodes })
 
   o('multiple tops', function () {
-    o(() => compile(`(ADD _ _)`)).throws('[trim] Multiple top expressions not allowed')
+    o(() => compile(`(ADD _ _)`)).throws('[trim] Multiple top expressions (TODO)')
+  })
+
+  o('invalid string position', function () {
+    const source = `
+      ("Hi")
+    `
+    o(() => compileTrim(source, { opcodes })).throws('[trim] First token in an expression must be a valid opcode or macro')
   })
 })
 

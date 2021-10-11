@@ -57,21 +57,42 @@ function readString(source: string, pos: Pos) {
   if (source[pos.i] !== '"') {
     throw new Error(`[trim] Expected starting quote \`"\``)
   }
-  const start = pos.i
+
+  let start = pos.i
+  let escaping = false
+  let committed = ''
+
   pos.newcol()
+
   while (pos.i < source.length) {
     const c = source[pos.i]
     if (c === '\n' || c === '\r') {
       throw new Error(`[trim] Expected end quote \`"\`, reached newline instead`)
     }
-    if (c === '"') {
+
+    if (c === '\\' && !escaping) {
+      escaping = true
       pos.newcol()
-      break
     }
-    pos.newcol()
+    else if (c === '"') {
+      pos.newcol()
+      if (escaping) {
+        committed = source.slice(start, pos.i - 2) + '"' // Skip backslash character
+        start = pos.i
+        escaping = false
+      }
+      else break
+    }
+    else if (escaping) {
+      escaping = false
+      pos.newcol()
+    }
+    else {
+      pos.newcol()
+    }
   }
   const end = pos.i
-  const atom = source.slice(start, end)
+  const atom = committed + source.slice(start, end)
   return atom
 }
 
