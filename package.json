@@ -1,14 +1,22 @@
 {
   "name": "@hackerdao/trim",
-  "version": "1.0.0",
+  "version": "0.9.0",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "ospec"
   },
   "type": "module",
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "keywords": [],
   "author": "",
+  "repository": {
+    "type": "github",
+    "url": "https://github.com/Hacker-DAO/trim"
+  },
   "license": "ISC",
   "devDependencies": {
     "@ethereumjs/vm": "^5.5.3",
