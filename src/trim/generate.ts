@@ -1,5 +1,5 @@
 import { BytecodeAstNode, MacroDefs, OpcodeDef, OpcodesByAsm, SexpNode, ToplevelSexp } from "../types"
-import { getOpcodesByAsm, prop, Prop, pad } from "../util"
+import { getOpcodesByAsm, prop, Prop, pad } from "../util.js"
 
 const HEX_VAL = /^0x[0-9a-f]+$/
 

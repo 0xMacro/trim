@@ -1,5 +1,5 @@
 import { SexpNode } from "../types"
-import { Pos } from "../util"
+import { Pos } from "../util.js"
 
 const WS = /(\s|\n|\r)/
 

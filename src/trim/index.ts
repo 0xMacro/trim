@@ -1,8 +1,8 @@
-import { standardMacros } from "./macros"
 import { OpcodeDef } from "../types"
-import { Pos } from "../util"
-import { generateBytecodeAst, generateBytecode } from "./generate"
-import { parseTrim } from "./parse"
+import { standardMacros } from "./macros.js"
+import { Pos } from "../util.js"
+import { generateBytecodeAst, generateBytecode } from "./generate.js"
+import { parseTrim } from "./parse.js"
 
 
 type CompileOptions = {

@@ -1,5 +1,5 @@
-import { keccak256 } from '@ethersproject/keccak256'
 import { BytecodeAstNode, ExpNode, MacroDefs } from "../types";
+import { keccak256 } from '@ethersproject/keccak256'
 
 export const standardMacros: MacroDefs = {
   push(...vals) {

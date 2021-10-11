@@ -1,5 +1,5 @@
 import { OpcodeDef } from './types'
-import { getOpcodesByAsm, pad } from './util'
+import { getOpcodesByAsm, pad } from './util.js'
 
 type Options = {
   opcodes: OpcodeDef[]

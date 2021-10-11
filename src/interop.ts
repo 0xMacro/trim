@@ -1,7 +1,7 @@
 import Common from '@ethereumjs/common'
 import { Opcode, OpcodeList } from '@ethereumjs/vm/dist/evm/opcodes'
 import { OpcodeDef } from './types'
-import { pad } from './util'
+import { pad } from './util.js'
 
 export function getOpcodesForTrim(opcodeList: OpcodeList): OpcodeDef[] {
   return [...opcodeList.values()].map(op => ({

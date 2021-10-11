@@ -1,8 +1,8 @@
-const o = require('ospec')
-const {compileTrim} = require('../dist/trim')
-const {parseTrim} = require('../dist/trim/parse')
-const {compileBasm} = require('../dist/basm')
-const {pad, Pos} = require('../dist/util')
+import o from 'ospec'
+import {compileTrim} from '../dist/trim/index.js'
+import {parseTrim} from '../dist/trim/parse.js'
+import {compileBasm} from '../dist/basm.js'
+import {pad, Pos} from '../dist/util.js'
 
 o('trim parse', function () {
   const source = `
@@ -132,6 +132,12 @@ o.spec('trim compile', function() {
     `
     o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
   })
+
+  // o.only('defmacro', function () {
+  //   const source = `
+  //     (defmacro double-push (val) PUSH)
+  //   `
+  // })
 
   o('full example 1', function () {
     const source = `
