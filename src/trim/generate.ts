@@ -53,12 +53,19 @@ export function generateBytecode(ast: BytecodeAstNode[], opcodes: OpcodeDef[], m
   const labels = {} as Record<string, number>
   const opcodesByAsm = getOpcodesByAsm(opcodes)
 
+
+  let seenRuntime = false
+
   function registerLabel(name: string) {
+    const isRuntime = seenRuntime
     return function resolveLabel() {
       if (labels[name] === undefined)
         throw new Error(`[trim] No such label: '${name}'`)
-      const pc = labels[name].toString(16)
-      return pad(pc, 4)
+      let pc = labels[name]
+      if (isRuntime) {
+        pc -= labels['#runtime']
+      }
+      return pad(pc.toString(16), 4)
     }
   }
 
@@ -103,22 +110,15 @@ export function generateBytecode(ast: BytecodeAstNode[], opcodes: OpcodeDef[], m
         throw new Error(`[trim] Duplicate label definition: '${node.name}'`)
       }
       labels[node.name] = pc()
+      if (node.name === '#runtime') {
+        seenRuntime = true
+      }
       return []
     }
     else {
       throw new Error(`[trim] Unexpected node type '${(node as any).type}' (1)`)
     }
   })
-
-  // Handle special #runtime label
-  if (labels['#runtime']) {
-    // TODO: CONSIDER LABELS BEFORE RUNTIME
-    for (let name in labels) {
-      if (name !== '#runtime') {
-        labels[name] -= labels['#runtime']
-      }
-    }
-  }
 
   return ast2.map(node => typeof node === 'string' ? node : node())
 }

@@ -117,6 +117,36 @@ o.spec('trim compile', function() {
     o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
   })
 
+  o('before and after #runtime labels', function () {
+    const source = `
+      PUSH1 0x00
+      (push #before)
+      (push #runtime)
+      (push #after)
+      #before
+      PUSH1 0x01
+      #runtime
+      PUSH1 0x02
+      (push #runtime)
+      #after
+      PUSH1 0x03
+      (push #after)
+    `
+    const expectedBasm = `
+      PUSH1 0x00
+      PUSH2 0x000b
+      PUSH2 0x000d
+      PUSH2 0x0012
+
+      PUSH1 0x01
+      PUSH1 0x02
+      PUSH2 0x0000
+      PUSH1 0x03
+      PUSH2 0x0005
+    `
+    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+  })
+
   o('comments', function () {
     const source = `
       PUSH1 0x01; Comment 1
