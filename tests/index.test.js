@@ -255,6 +255,10 @@ o.spec('trim errors', function () {
     o(() => compile(`(ADD _ _)`)).throws('[trim] Multiple top expressions (TODO)')
   })
 
+  o('duplicate labels', function () {
+    o(() => compile(`#a #a`)).throws(`[trim] Duplicate label definition: '#a'`)
+  })
+
   o('invalid string position', function () {
     const source = `
       ("Hi")

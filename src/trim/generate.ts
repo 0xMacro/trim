@@ -99,6 +99,9 @@ export function generateBytecode(ast: BytecodeAstNode[], opcodes: OpcodeDef[], m
       throw new Error(`[trim] Top expressions not allowed on top level`)
     }
     else if (node.type === 'label') {
+      if (node.name in labels) {
+        throw new Error(`[trim] Duplicate label definition: '${node.name}'`)
+      }
       labels[node.name] = pc()
       return []
     }
