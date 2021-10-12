@@ -163,12 +163,6 @@ o.spec('trim compile', function() {
     o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
   })
 
-  // o.only('defmacro', function () {
-  //   const source = `
-  //     (defmacro double-push (val) PUSH)
-  //   `
-  // })
-
   o('full example 1', function () {
     const source = `
       (SSTORE 0x00 "Hello, Trim!")
