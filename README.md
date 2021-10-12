@@ -69,7 +69,7 @@ What Trim introduces is **s-expressions**. An s-expression allows you to write i
 (MLOAD (ADD 0x1000 0x20))
 ```
 
-This code is equivalent to the previous example. Note how you don't have to write *all* your code in s-expressions.
+This code is equivalent to the previous example.
 
 You can also use the top operator (`_`) to refer to the top of the stack. The following examples are all equivalent:
 
@@ -87,6 +87,8 @@ PUSH1 0x20
 (ADD 0x1000 0x20)
 MLOAD
 ```
+
+Note how you don't have to write *all* your code in s-expressions.
 
 ## Features
 
@@ -168,6 +170,7 @@ A convenience macro to output function id (also known an "function selector") se
 
 These are some features we're considering adding to Trim. Create an issue to discuss or suggest more!
 
+- Hardhat integration
 - More standard ABI macros
 - Imports
 - User-defined macros
