@@ -259,9 +259,9 @@ o.spec('macros', function () {
     o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
   })
 
-  o('abi/function-id', function () {
+  o('abi/fn-selector', function () {
     const source = `
-      (EQ (abi/function-id "foo()") "ABC")
+      (EQ (abi/fn-selector "foo()") "ABC")
     `
     const expectedBasm = `
       PUSH3 0x414243

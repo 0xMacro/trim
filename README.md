@@ -43,7 +43,7 @@ DUP1
 (CALLDATACOPY 0x1c 0x00 0x04)
 (MLOAD 0x00) ; copy function id onto the stack
 
-(EQ (abi/function-id "hello()") DUP1)
+(EQ (abi/fn-selector "hello()") DUP1)
 (JUMPI #hello _)
 
 REVERT ; No matching function id
@@ -153,12 +153,12 @@ But what if you want to push a string onto the stack? Just use the `push` macro:
 (push "Hi") ; Works!
 ```
 
-### abi/function-id
+### abi/fn-selector
 
-A convenience macro to output function id (also known an "function selector") segment of an [ABI encoded function call](https://docs.soliditylang.org/en/v0.5.3/abi-spec.html#function-selector). Useful for running function-specific code.
+A convenience macro to output function selector (also known an "function id") segment of an [ABI encoded function call](https://docs.soliditylang.org/en/v0.5.3/abi-spec.html#function-selector). Useful for running function-specific code.
 
 ```
-(EQ (abi/function-id "foo()") DUP1)
+(EQ (abi/fn-selector "foo()") DUP1)
 (JUMPI #foo _)
 
 ; ...
