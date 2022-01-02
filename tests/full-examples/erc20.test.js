@@ -96,8 +96,11 @@ o.spec('ERC-20', function () {
     (CALLDATACOPY 0x1c 0x00 0x04)
     (MLOAD 0x00) ; copy function id onto the stack
 
-    (EQ (abi/fn-selector "balanceOf(address)") DUP1)
-    (JUMPI #balanceOf _)
+    (def defun (selector label)
+      (EQ (abi/fn-selector selector) DUP1)
+      (JUMPI label _)
+    )
+    (defun "balanceOf(address)" #balanceOf)
 
     REVERT ; No matching function id
 

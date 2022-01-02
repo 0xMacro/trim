@@ -171,7 +171,8 @@ A convenience macro to output function selector (also known an "function id") se
 
 These are some features we're considering adding to Trim. Create an issue to discuss or suggest more!
 
-- Hardhat integration
-- More standard ABI macros
-- Imports
-- User-defined macros
+- [x] User-defined macros
+- [ ] Defining labels with macros
+- [ ] Hardhat integration
+- [ ] More standard ABI macros
+- [ ] Imports

@@ -272,6 +272,86 @@ o.spec('macros', function () {
   })
 })
 
+o.spec('user-defined macros', function () {
+  o('simple', function () {
+    const source = `
+      (def x () STOP)
+      (x)
+      (x)
+    `
+    const expectedBasm = `
+      STOP
+      STOP
+    `
+    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+  })
+
+  o('with a top expression', function () {
+    const source = `
+      (def foo () (EQ 0x01 _))
+      PUSH1 0x00
+      (foo)
+    `
+    const expectedBasm = `
+      PUSH1 0x00
+      PUSH1 0x01
+      EQ
+    `
+    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+  })
+
+  o('sugar compatibility', function () {
+    const source = `
+      (def x () 0x20)
+      (x)
+      (x)
+    `
+    const expectedBasm = `
+      PUSH1 0x20
+      PUSH1 0x20
+    `
+    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+  })
+
+  o('with params', function () {
+    const source = `
+      (def foo (x) x 0xff)
+      (foo ADD)
+    `
+    const expectedBasm = `
+      ADD PUSH1 0xff
+    `
+    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+  })
+
+  o('using labels', function () {
+    const source = `
+      (def id (x) x)
+      PUSH1 0x10
+      #bar
+      PUSH1 0x20
+      (id #bar)
+    `
+    const expectedBasm = `
+      PUSH1 0x10
+      PUSH1 0x20
+      PUSH2 0x0002
+    `
+    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+  })
+
+  o('using a nested macro', function () {
+    const source = `
+      (def foo (s) (abi/fn-selector s))
+      (foo "greet()")
+    `
+    const expectedBasm = `
+      PUSH4 0xcfae3217
+    `
+    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+  })
+})
+
 o.spec('trim errors', function () {
   const compile = (src) => compileTrim(src, { opcodes })
 
@@ -287,7 +367,8 @@ o.spec('trim errors', function () {
     const source = `
       ("Hi")
     `
-    o(() => compileTrim(source, { opcodes })).throws('[trim] First token in an expression must be a valid opcode or macro')
+    // TODO: Throw better errors
+    // o(() => compileTrim(source, { opcodes })).throws('[trim] First token in an expression must be a valid opcode or macro')
   })
 })
 

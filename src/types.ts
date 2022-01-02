@@ -2,6 +2,7 @@ export type ToplevelSexp = SexpNode[]
 
 export type SexpNode =
   | string
+  | BytecodeAstNode
   | SexpNode[]
 
 export type OpcodeDef = {
@@ -17,7 +18,10 @@ export type BytecodeAstNode =
   | { type: 'literal', subtype: 'hex' | 'string', value: string }
   | { type: 'label', name: string }
   | { type: 'macro', name: string }
+  | ExpAtom
   | ExpNode
+
+export type ExpAtom = { type: 'atom', name: string }
 
 export type ExpNode = {
   type: 'exp'

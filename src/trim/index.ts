@@ -1,4 +1,4 @@
-import { OpcodeDef } from "../types"
+import { MacroFn, OpcodeDef } from "../types"
 import { standardMacros } from "./macros.js"
 import { Pos } from "../util.js"
 import { generateBytecodeAst, generateBytecode } from "./generate.js"

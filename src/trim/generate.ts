@@ -1,23 +1,64 @@
-import { BytecodeAstNode, MacroDefs, OpcodeDef, OpcodesByAsm, SexpNode, ToplevelSexp } from "../types"
+import { BytecodeAstNode, MacroDefs, MacroFn, OpcodeDef, OpcodesByAsm, SexpNode, ToplevelSexp } from "../types"
 import { getOpcodesByAsm, prop, Prop, pad } from "../util.js"
+import { defineMacro } from "./macros.js"
 
 const HEX_VAL = /^0x[0-9a-f]+$/
 
 export function generateBytecodeAst(sexps: ToplevelSexp, opcodes: OpcodeDef[], macros: MacroDefs) {
   const opcodesByAsm = getOpcodesByAsm(opcodes)
-  return sexps.map(exp => _generateBytecodeAst(exp, opcodesByAsm, { macros, isTopLevel: true }))
+  return sexps.map(exp => _generateBytecodeAst(exp, opcodesByAsm, { macros, level: 0, inMacro: false }))
 }
 
 function _generateBytecodeAst(exp: SexpNode, opcodesByAsm: OpcodesByAsm, ctx: {
   macros: MacroDefs
-  isTopLevel: boolean
+  level: number
+  inMacro: boolean
 }): BytecodeAstNode {
   if (Array.isArray(exp)) {
-    const nodes = exp.map(e => _generateBytecodeAst(e, opcodesByAsm, { ...ctx, isTopLevel: false }))
-    if (nodes[0].type !== 'op' && nodes[0].type !== 'macro') {
-      throw new Error(`[trim] First token in an expression must be a valid opcode or macro`)
+    if (!exp.length) return { type: 'exp', nodes: [] }
+
+    const firstNode = _generateBytecodeAst(exp[0], opcodesByAsm, { ...ctx, level: ctx.level + 1 })
+
+    if (firstNode.type === 'macro' && firstNode.name === 'def') {
+      if (ctx.level > 1) {
+        throw new Error(`[trim] 'def' macro can only be on top level`)
+      }
+
+      const [nameNode, paramsNode] = exp.slice(1,3).map(e =>
+        _generateBytecodeAst(e, opcodesByAsm, { ...ctx, level: 0, inMacro: true })
+      )
+      const body = exp.slice(3)
+
+      if (nameNode.type !== 'atom') {
+        throw new Error(`[trim] invalid def name`)
+      }
+      const name = nameNode.name
+
+      if (paramsNode.type !== 'exp') {
+        throw new Error(`[trim] def '${name}' is missing parameters`)
+      }
+      const paramNames = paramsNode.nodes.map(node => {
+        if (node.type !== 'atom') {
+          throw new Error(`[trim] Invalid def '${name}' parameter type: '${node.type}'`)
+        }
+        return node.name
+      })
+
+      ctx.macros[name] = defineMacro(name, paramNames, body)
+
+      return { type: 'exp', nodes: [] }
     }
-    return { type: 'exp', nodes }
+    else if (!ctx.inMacro && firstNode.type !== 'op' && firstNode.type !== 'macro') {
+      throw new Error(`[trim] First token in an expression must be a valid opcode or macro\n  Instead found: '${
+        'name' in firstNode ? firstNode.name : firstNode.type}'`)
+    }
+    else {
+      const restNodes = exp.slice(1).map(e => _generateBytecodeAst(e, opcodesByAsm, { ...ctx, level: ctx.level + 1 }))
+      return { type: 'exp', nodes: ([] as typeof restNodes).concat(firstNode, restNodes) }
+    }
+  }
+  else if (typeof exp !== 'string') {
+    return exp
   }
   else if (exp === '_') {
     return { type: 'top' }
@@ -41,6 +82,9 @@ function _generateBytecodeAst(exp: SexpNode, opcodesByAsm: OpcodesByAsm, ctx: {
   }
   else if (ctx.macros[exp]) {
     return { type: 'macro', name: exp }
+  }
+  else if (/[a-z]/.test(exp[0])) {
+    return { type: 'atom', name: exp }
   }
   else {
     throw new Error(`[trim] Invalid token: '${exp}'`)
@@ -116,7 +160,7 @@ export function generateBytecode(ast: BytecodeAstNode[], opcodes: OpcodeDef[], m
       return []
     }
     else {
-      throw new Error(`[trim] Unexpected node type '${(node as any).type}' (1)`)
+      throw new Error(`[trim] Unexpected ${(node as any).type} node ${'name' in node ? `'${node.name}'` : ''}`)
     }
   })
 
@@ -134,15 +178,16 @@ function _generateBytecode(ast: BytecodeAstNode[], ctx: {
 }): (string | (() => string))[] {
 
   let limit = parseInt(process.env.MACRO_LOOP_LIMIT || '', 10) || 250
-  while (ast[0].type === 'macro' && limit > 0) {
+  while (ast.length && ast[0].type === 'macro' && limit > 0) {
     ast = ctx.macros[ast[0].name].call({
       parseSexp(sexp) {
-        return _generateBytecodeAst(sexp, ctx.opcodesByAsm, { macros: ctx.macros, isTopLevel: false })
-      }
+        return _generateBytecodeAst(sexp, ctx.opcodesByAsm, { ...ctx, inMacro: true })
+      },
     }, ...ast.slice(1))
+    ast = ast.reverse()
     limit -= 1
   }
-  if (ast[0].type === 'macro' && limit === 0) {
+  if (ast.length && ast[0].type === 'macro' && limit === 0) {
     throw new Error(`[trim] Macro loop limit reached`)
   }
 
@@ -150,9 +195,10 @@ function _generateBytecode(ast: BytecodeAstNode[], ctx: {
     if (node.type === 'top' && ctx.seenTop()) {
       throw new Error(`[trim] Multiple top expressions (TODO)`)
     }
-    else if (node.type === 'top' && ctx.level === 0) {
+    else if (node.type === 'top') {
       ctx.seenTop(true)
       if (i === 0) {
+        // Top expressions as the last item in an sexp naturally uses the top item in the stack
         return []
       }
       if (i === 1) {
@@ -166,14 +212,6 @@ function _generateBytecode(ast: BytecodeAstNode[], ctx: {
         ctx.opcodesByAsm.DUP1.hex,
         ctx.opcodesByAsm['SWAP' + (i + 1)].hex,
       ]
-    }
-    else if (node.type === 'top' && ctx.level > 0) {
-      throw new Error(`[scat] Deep top expression (TODO)`)
-    }
-    else if (node.type === 'top') {
-      // Top expressions as the last item in an sexp naturally uses the top item in the stack
-      ctx.seenTop(true)
-      return []
     }
     else if (node.type === 'literal' && node.subtype === 'string') {
       const pushBytes = Buffer.from(node.value).toString('hex')
