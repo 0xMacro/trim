@@ -135,17 +135,17 @@ o.spec('ERC-20', function () {
 
 
   o('balanceOf', async () => {
-    const acc = 0
-    const {results, returnValue} = await call(contractAddr, acc, abi, 'balanceOf(address)', [accounts[acc].address])
+    const [alice] = accounts
+    const {results, returnValue} = await alice.call(contractAddr, abi, 'balanceOf(address)', [alice.address])
     o(returnValue).equals(pad('22b', 64)) // 555 in hex
   })
 
   //
   // Helpers
   //
-  async function call(contractAddr, account, abi, funcName, args) {
+  async function call(accountIndex, contractAddr, abi, funcName, args) {
     const calldata = abi.getSighash(funcName) + AbiCoder.encode(abi.functions[funcName].inputs, args).slice(2)
-    return await runTx(account, {
+    return await runTx(accountIndex, {
       to: contractAddr,
       gasPrice: "0x09184e72a000",
       gasLimit: "0x90710",
@@ -179,14 +179,37 @@ o.spec('ERC-20', function () {
     const privateKeyBuf = toBuffer(keyPair.privateKey)
     const publicKeyBuf = toBuffer(keyPair.publicKey)
     const address = new Address(pubToAddress(publicKeyBuf, true))
-    accounts[index] = { address: address.toString(), nonce: 0, privateKeyBuf }
+    accounts[index] = {
+      call: call.bind(null, index),
+      nonce: 0,
+      address: address.toString(),
+      privateKeyBuf
+    }
 
     await vm.stateManager.putAccount(address, account)
   }
 
 })
 
+
+//
+// To create more:
+// let privateKey = require('crypto').randomBytes(32).toString('hex')
+// let publicKey = require('ethereumjs-util').privateToPublic(Buffer.from(privateKey, 'hex')).toString('hex')
+//
 const keyPairs = [{
+  "privateKey": "0x39c592e8cff4b56774c6a6ad27e079cb5ae920f6224207adb106ab4d29bfd9dc",
+  "publicKey": "0x0d56e497c86acc08afddc310420d9889edc58148478c85388815351928aaecdde4ce8b7c020e1bcda88d754798eb11498b37e6e1bfebed614ad207de16f7af21"
+}, {
+  "privateKey": "0x30ff87cf5d45c89bab9f5498a317ae928f021a242bd2943c2946924e8d17100d",
+  "publicKey": "0x3490efb49d57de40966bbc3c59ae999e2a466510950b612d2193d77b07662f47dab8867cbb115d14a679dd6e4dcad61d0e6228bfa71b2a8eefd5e6930eda6f3f"
+}, {
+  "privateKey": "0xca4e0d38951d6aac488970e1d078f4cecd07c895cbe46d25806e0454c40f1875",
+  "publicKey": "0x876c0d855001b756c67c511465cec861e2290503ca3826c5b5c502fca2b5ade79be9aaad9159c4755ee3830ec918871c3db01cc4694ff4ce2840100d10dfda8b"
+}, {
+  "privateKey": "0x71ad235f49dd6b5a6493d0a3aa7e42dfc28c99ec9748c293ab607280fbc082f3",
+  "publicKey": "0x14f92190b8363d715f0ab6b8131b26b94cefb39612912dbce986f7011f7769609b568a3559647fd37a4cbc1f2ee55074943f77efb1a392571252676e948e7cd2"
+}, {
   "privateKey": "0x3cd7232cd6f3fc66a57a6bedc1a8ed6c228fff0a327e169c2bcc5e869ed49511",
   "publicKey": "0x0406cc661590d48ee972944b35ad13ff03c7876eae3fd191e8a2f77311b0a3c6613407b5005e63d7d8d76b89d5f900cde691497688bb281e07a5052ff61edebdc0"
 }]
