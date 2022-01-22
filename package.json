@@ -18,10 +18,12 @@
     "url": "https://github.com/Hacker-DAO/trim"
   },
   "license": "ISC",
+  "dependencies": {
+    "@ethersproject/keccak256": "^5.4.0"
+  },
   "devDependencies": {
     "@ethereumjs/vm": "^5.5.3",
     "@ethersproject/abi": "^5.5.0",
-    "@ethersproject/keccak256": "^5.4.0",
     "ethers": "^5.5.1",
     "nodemon": "^2.0.13",
     "ospec": "^4.1.1",
