@@ -7,6 +7,10 @@ export function pad(str: string, len: number, char='0') {
   return str
 }
 
+export function autoPad(str: string) {
+  return pad(str, str.length + (str.length % 2 === 1 ? 1 : 0))
+}
+
 export function getOpcodesByAsm(opcodes: OpcodeDef[]) {
   return opcodes.reduce((all, op) => {
     all[op.asm] = op
