@@ -2,7 +2,7 @@
 
 Trim is a opcode-oriented programming language for the Ethereum Virtual Machine (EVM). It offers syntax for writing highly optimized code in a more readable manner, without introducing mental or complexity overhead.
 
-- [Try it in your browser!](https://oss.hacker-dao.com/trim/repl)
+- [Try it in your browser!](https://shipyard.rocks/trim/repl)
 - [See the ETH Global Talk](https://www.youtube.com/watch?v=J15hxPRflUg)
 - [Read the slides](./trim-eth-global-2021.pdf)
 
