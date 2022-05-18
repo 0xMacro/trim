@@ -1,5 +1,5 @@
 {
-  "name": "@hackerdao/trim",
+  "name": "@0xmacro/trim",
   "version": "0.9.2",
   "description": "",
   "main": "dist/index.js",
@@ -15,7 +15,7 @@
   "author": "",
   "repository": {
     "type": "github",
-    "url": "https://github.com/Hacker-DAO/trim"
+    "url": "https://github.com/0xMacro/trim"
   },
   "license": "ISC",
   "dependencies": {

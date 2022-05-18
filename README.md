@@ -2,7 +2,7 @@
 
 Trim is a opcode-oriented programming language for the Ethereum Virtual Machine (EVM). It offers syntax for writing highly optimized code in a more readable manner, without introducing mental or complexity overhead.
 
-- [Try it in your browser!](https://shipyard.rocks/trim/repl)
+- [Try it in your browser!](https://macro.cx/trim/repl)
 - [See the ETH Global Talk](https://www.youtube.com/watch?v=J15hxPRflUg)
 - [Read the slides](./trim-eth-global-2021.pdf)
 
@@ -11,13 +11,13 @@ Trim is a opcode-oriented programming language for the Ethereum Virtual Machine 
 First install Trim (and ethereumjs/vm as you'll probably use its opcode definitions)
 
 ```
-npm install @hackerdao/trim @ethereumjs/vm
+npm install @0xmacro/trim @ethereumjs/vm
 ```
 
 Then just import and compile:
 
 ```js
-import { compileTrim, getOpcodesForTrim } from '@hackerdao/trim'
+import { compileTrim, getOpcodesForTrim } from '@0xmacro/trim'
 import { getOpcodesForHF } from '@ethereumjs/vm/dist/evm/opcodes'
 import Common, { Chain, Hardfork } from '@ethereumjs/common'
 
