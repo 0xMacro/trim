@@ -4,7 +4,7 @@ import { defineMacro } from "./macros.js"
 
 const HEX_VAL = /^0x[0-9a-f]+$/
 const DEC_VAL = /^[0-9]+$/
-const BYTE_COUNT_VAL = /^([0-9]+)bytes$/
+const BYTE_COUNT_VAL = /^([0-9]+)(byte|word)s?$/
 
 export function generateBytecodeAst(sexps: ToplevelSexp, opcodes: OpcodeDef[], macros: MacroDefs) {
   const opcodesByAsm = getBackwardsFriendlyOpcodesByAsm(opcodes)
@@ -80,6 +80,12 @@ function _generateBytecodeAst(exp: SexpNode, opcodesByAsm: OpcodesByAsm, ctx: {
   }
   else if (DEC_VAL.test(exp)) {
     return { type: 'literal', subtype: 'hex', value: decToHex(parseInt(exp, 10)) }
+  }
+  else if (BYTE_COUNT_VAL.test(exp)) {
+    const m = exp.match(BYTE_COUNT_VAL)!
+    const count = parseInt(m[1], 10)
+    const mult = m[2] === 'byte' ? 1 : 32
+    return { type: 'literal', subtype: 'hex', value: decToHex(count * mult) }
   }
   else if (opcodesByAsm[exp]) {
     const op = opcodesByAsm[exp]

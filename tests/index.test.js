@@ -261,6 +261,30 @@ o.spec('notations', function () {
     `
     o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
   })
+
+  o('byte', function () {
+    const source = `
+      (ADD 1byte 4bytes)
+    `
+    const expectedBasm = `
+      PUSH1 0x04
+      PUSH1 0x01
+      ADD
+    `
+    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+  })
+
+  o('word', function () {
+    const source = `
+      (ADD 1word 4words)
+    `
+    const expectedBasm = `
+      PUSH1 0x80
+      PUSH1 0x20
+      ADD
+    `
+    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+  })
 })
 
 o.spec('macros', function () {
