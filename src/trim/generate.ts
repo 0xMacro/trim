@@ -118,7 +118,7 @@ function _generateBytecodeAst(exp: SexpNode, opcodesByAsm: OpcodesByAsm, ctx: {
   else if (ctx.macros[exp]) {
     return { type: 'macro', name: exp }
   }
-  else if (/[a-z]/.test(exp[0])) {
+  else if (/^[a-z$]/.test(exp[0])) {
     return { type: 'atom', name: exp }
   }
   else {

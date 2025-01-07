@@ -375,6 +375,31 @@ o.spec('user-defined macros', function () {
     o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
   })
 
+  o('bare reference', function () {
+    const source = `
+      (def foo () 0x07)
+      (push foo)
+    `
+    const expectedBasm = `
+      PUSH1 0x07
+    `
+    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+  })
+
+  o('special characters', function () {
+    const source = `
+      (def $foo () 0x07)
+      (push $foo)
+      (def $$ () 0x09)
+      (push $$)
+    `
+    const expectedBasm = `
+      PUSH1 0x07
+      PUSH1 0x09
+    `
+    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+  })
+
   o('sugar compatibility', function () {
     const source = `
       (def x () 0x20)
