@@ -10,12 +10,13 @@ const MACRO_LOOP_LIMIT = parseInt(process.env.MACRO_LOOP_LIMIT || '', 10) || 250
 
 export function generateBytecodeAst(sexps: ToplevelSexp, opcodes: OpcodeDef[], macros: MacroDefs) {
   const opcodesByAsm = getBackwardsFriendlyOpcodesByAsm(opcodes)
-  return sexps.flatMap(exp => _generateBytecodeAst(exp, opcodesByAsm, { macros, level: 0, inMacro: false }))
+  return sexps.flatMap(exp => _generateBytecodeAst(exp, opcodesByAsm, { macros, level: 0, limit: 0, inMacro: false }))
 }
 
 function _generateBytecodeAst(exp: SexpNode, opcodesByAsm: OpcodesByAsm, ctx: {
   macros: MacroDefs
   level: number
+  limit: number
   inMacro: boolean
 }): BytecodeAstNode[] {
   if (Array.isArray(exp)) {
@@ -38,7 +39,7 @@ function _generateBytecodeAst(exp: SexpNode, opcodesByAsm: OpcodesByAsm, ctx: {
     if (!ctx.macros[firstNode]) {
       throw new Error(`[trim] No such macro: '${firstNode}'`)
     }
-    if (ctx.level > MACRO_LOOP_LIMIT) {
+    if (ctx.level + ctx.limit > MACRO_LOOP_LIMIT) {
       throw new Error(`[trim] Macro loop limit reached`)
     }
 
@@ -67,12 +68,48 @@ function _generateBytecodeAst(exp: SexpNode, opcodesByAsm: OpcodesByAsm, ctx: {
 
       return []
     }
+    else if (firstNode === 'defcounter') {
+      const [name, startNode] = exp.slice(1)
+      if (typeof name !== 'string') {
+        throw new Error(`[trim] defcounter requires a name`)
+      }
+      const start = (function () {
+        if (!startNode) return 0
+        const [s] = _generateBytecodeAst(startNode, opcodesByAsm, { ...ctx, level: ctx.level + 1 })
+        if (s.type !== 'literal' || s.subtype !== 'hex') {
+          throw new Error(`[trim] defcounter requires a literal start value`)
+        }
+        return parseInt(s.value, 16)
+      })()
+
+      let counter = start
+      ctx.macros[name] = function counterMacro(op, inc) {
+        let val = counter
+        if (op === '++' || op === '+=') {
+          const [amount] = inc
+            ? _generateBytecodeAst(inc, opcodesByAsm, { ...ctx, level: ctx.level + 1 })
+            : [{ type: 'literal', subtype: 'hex', value: '01' }]
+
+          if (amount.type !== 'literal' || amount.subtype !== 'hex') {
+            throw new Error(`[trim] Invalid counter increment value`)
+          }
+
+          counter += parseInt(amount.value, 16)
+          if (op === '+=') val = counter
+          else if (inc) throw new Error(`[trim] Counter ++ does not take an increment value`)
+        }
+
+        return [{ type: 'literal', subtype: 'hex', value: decToHex(val) }]
+      }
+
+      return []
+    }
     else {
       function parseSexp(sexp: SexpNode) {
         return _generateBytecodeAst(sexp, opcodesByAsm, { ...ctx, inMacro: true, level: ctx.level + 1 })
       }
       const replaced = ctx.macros[firstNode].call({ parseSexp, level: ctx.level }, ...exp.slice(1))
-      return replaced.flatMap(node => _generateBytecodeAst(node, opcodesByAsm, { ...ctx, level: ctx.level + 1 }))
+      return replaced.flatMap(node => _generateBytecodeAst(node, opcodesByAsm, { ...ctx, limit: ctx.limit + 1 }))
     }
   }
   else if (typeof exp !== 'string') {

@@ -355,6 +355,28 @@ o.spec('macros', function () {
     `
     o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
   })
+
+
+  o('defcounter', function () {
+    const source = `
+      (defcounter $a)
+      (defcounter b 10)
+      (defcounter c 200)
+      (push $a)
+      (push $a)
+      (push (b ++))
+      (push (b))
+      (push (math ($a += 3) + (c ++)))
+    `
+    const expectedBasm = `
+      PUSH1 0x00
+      PUSH1 0x00
+      PUSH1 0x0a
+      PUSH1 0x0b
+      PUSH1 0xcb
+    `
+    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+  })
 })
 
 o.spec('user-defined macros', function () {
@@ -474,6 +496,26 @@ o.spec('user-defined macros', function () {
     `
     const expectedBasm = `
       PUSH4 0xcfae3217
+    `
+    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+  })
+
+  o('using a nested def', function () {
+    const source = `
+      (defcounter reg-counter)
+      (def defreg (name) (def name () (math 1word * (reg-counter ++))))
+      (defreg $a)
+      (defreg $b)
+      (MSTORE $a 0xaa)
+      (MSTORE $b 0xbb)
+    `
+    const expectedBasm = `
+      PUSH1 0xaa
+      PUSH1 0x00
+      MSTORE
+      PUSH1 0xbb
+      PUSH1 0x20
+      MSTORE
     `
     o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
   })

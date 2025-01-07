@@ -42,8 +42,9 @@ export const standardMacros: MacroDefs = {
     return [['push', `0x${fnId}`]]
   },
 
-  // Empty definition for simplifying logic elsewhere
+  // Empty definitions for simplifying logic elsewhere
   def() { return [] },
+  defcounter() { return [] },
 }
 
 export function defineMacro(name: string, params: string[], body: SexpNode[]): MacroFn {
