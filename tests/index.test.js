@@ -287,6 +287,42 @@ o.spec('notations', function () {
   })
 })
 
+o.spec('math', function () {
+  o('expression literals', function () {
+    const source = `
+      (push (math 1 + 2 * 30 / 4 - 5))
+    `
+    const expectedBasm = `
+      PUSH1 0x0b
+    `
+    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+  })
+
+  o('notations', function () {
+    const source = `
+      (push (math 0x20 * 4bytes))
+    `
+    const expectedBasm = `
+      PUSH1 0x80
+    `
+    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+  })
+
+  o('subexpressions', function () {
+    const source = `
+      (push (math 1 + (math 2 * 3)))
+    `
+    const expectedBasm = `
+      PUSH1 0x07
+    `
+    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+  })
+
+  o('throws on invalid terms', function () {
+    o(() => compileTrim(`(math 1 + 2 blah)`, { opcodes })).throws(`[trim] Invalid math term: 'blah'`)
+  })
+})
+
 o.spec('macros', function () {
   o('push', function () {
     const source = `
@@ -306,18 +342,6 @@ o.spec('macros', function () {
       PUSH3 0x414243
       PUSH4 0xc2985578
       EQ
-    `
-    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
-  })
-
-  o('hex/add', function () {
-    const source = `
-      (ADD 0x01 (hex/add 0x02 0x03 0x04))
-    `
-    const expectedBasm = `
-      PUSH1 0x09
-      PUSH1 0x01
-      ADD
     `
     o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
   })

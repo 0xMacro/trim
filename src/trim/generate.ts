@@ -50,6 +50,30 @@ function _generateBytecodeAst(exp: SexpNode, opcodesByAsm: OpcodesByAsm, ctx: {
 
       return { type: 'exp', nodes: [] }
     }
+    else if (firstNode.type === 'macro' && firstNode.name === 'math') {
+      const validTerms: (string | number)[] = exp.slice(1).map(term => {
+        // Check for math specific terms first since these are not normally valid tokens
+        if (typeof term === 'string' && /^(\+|-|\*|\/)/.test(term)) {
+          return term
+        }
+
+        // Otherwise, resolve Trim terms as usual
+        const result = _generateBytecodeAst(term, {}, { ...ctx, level: ctx.level + 1, inMacro: true })
+        if (result.type !== 'literal' || result.subtype !== 'hex') {
+          // TODO: Better error message (need reverse parser)
+          throw new Error(`[trim] Invalid math term: '${'name' in result ? result.name : JSON.stringify(result)}'`)
+        }
+        return parseInt(result.value, 16)
+      })
+
+      const result = eval(validTerms.join(' '))
+      if (typeof result !== 'number') {
+        // TODO: Better error message (need reverse parser)
+        throw new Error(`[trim] Math result is not a number: '${result}'`)
+      }
+
+      return { type: 'literal', subtype: 'hex', value: decToHex(result) }
+    }
     else if (!ctx.inMacro && firstNode.type !== 'op' && firstNode.type !== 'macro') {
       throw new Error(`[trim] First token in an expression must be a valid opcode or macro\n  Instead found: '${
         'name' in firstNode ? firstNode.name : firstNode.type}'`)
