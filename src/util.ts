@@ -11,6 +11,14 @@ export function autoPad(str: string) {
   return pad(str, str.length + (str.length % 2 === 1 ? 1 : 0))
 }
 
+export function decToHex(dec: number) {
+  let bytes = dec.toString(16)
+  if (bytes.length % 2 === 1) {
+    bytes = '0' + bytes
+  }
+  return bytes
+}
+
 export function getOpcodesByAsm(opcodes: OpcodeDef[]) {
   return opcodes.reduce((all, op) => {
     all[op.asm] = op

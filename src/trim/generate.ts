@@ -1,9 +1,10 @@
 import { BytecodeAstNode, MacroDefs, OpcodeDef, OpcodesByAsm, SexpNode, ToplevelSexp } from "../types"
-import { prop, Prop, pad, getBackwardsFriendlyOpcodesByAsm } from "../util.js"
+import { prop, Prop, pad, getBackwardsFriendlyOpcodesByAsm, decToHex } from "../util.js"
 import { defineMacro } from "./macros.js"
 
 const HEX_VAL = /^0x[0-9a-f]+$/
 const DEC_VAL = /^[0-9]+$/
+const BYTE_COUNT_VAL = /^([0-9]+)bytes$/
 
 export function generateBytecodeAst(sexps: ToplevelSexp, opcodes: OpcodeDef[], macros: MacroDefs) {
   const opcodesByAsm = getBackwardsFriendlyOpcodesByAsm(opcodes)
@@ -78,11 +79,7 @@ function _generateBytecodeAst(exp: SexpNode, opcodesByAsm: OpcodesByAsm, ctx: {
     return { type: 'literal', subtype: 'hex', value: bytes }
   }
   else if (DEC_VAL.test(exp)) {
-    let bytes = parseInt(exp, 10).toString(16)
-    if (bytes.length % 2 === 1) {
-      bytes = '0' + bytes
-    }
-    return { type: 'literal', subtype: 'hex', value: bytes }
+    return { type: 'literal', subtype: 'hex', value: decToHex(parseInt(exp, 10)) }
   }
   else if (opcodesByAsm[exp]) {
     const op = opcodesByAsm[exp]
