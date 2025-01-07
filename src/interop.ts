@@ -1,5 +1,4 @@
-import Common from '@ethereumjs/common'
-import { Opcode, OpcodeList } from '@ethereumjs/vm/dist/evm/opcodes'
+import { OpcodeList } from '@ethereumjs/evm/src/opcodes'
 import { OpcodeDef } from './types'
 import { pad } from './util.js'
 

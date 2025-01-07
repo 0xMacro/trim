@@ -18,6 +18,14 @@ export function getOpcodesByAsm(opcodes: OpcodeDef[]) {
   }, {} as Record<string, OpcodeDef>)
 }
 
+export function getBackwardsFriendlyOpcodesByAsm(opcodes: OpcodeDef[]) {
+  const ops = getOpcodesByAsm(opcodes)
+  if (!ops['SHA3'] && ops['KECCAK256']) {
+    ops['SHA3'] = ops['KECCAK256']
+  }
+  return ops
+}
+
 export function notNullish<T>(x: T | null | undefined | false | 0): x is T {
   return !!x
 }

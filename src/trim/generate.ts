@@ -1,11 +1,11 @@
-import { BytecodeAstNode, MacroDefs, MacroFn, OpcodeDef, OpcodesByAsm, SexpNode, ToplevelSexp } from "../types"
-import { getOpcodesByAsm, prop, Prop, pad } from "../util.js"
+import { BytecodeAstNode, MacroDefs, OpcodeDef, OpcodesByAsm, SexpNode, ToplevelSexp } from "../types"
+import { prop, Prop, pad, getBackwardsFriendlyOpcodesByAsm } from "../util.js"
 import { defineMacro } from "./macros.js"
 
 const HEX_VAL = /^0x[0-9a-f]+$/
 
 export function generateBytecodeAst(sexps: ToplevelSexp, opcodes: OpcodeDef[], macros: MacroDefs) {
-  const opcodesByAsm = getOpcodesByAsm(opcodes)
+  const opcodesByAsm = getBackwardsFriendlyOpcodesByAsm(opcodes)
   return sexps.map(exp => _generateBytecodeAst(exp, opcodesByAsm, { macros, level: 0, inMacro: false }))
 }
 
@@ -95,8 +95,7 @@ export function generateBytecode(ast: BytecodeAstNode[], opcodes: OpcodeDef[], m
   const pc = prop(0)
   const inc = (byteCount: number) => pc(pc() + byteCount)
   const labels = {} as Record<string, number>
-  const opcodesByAsm = getOpcodesByAsm(opcodes)
-
+  const opcodesByAsm = getBackwardsFriendlyOpcodesByAsm(opcodes)
 
   let seenRuntime = false
 

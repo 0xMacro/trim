@@ -1,18 +1,15 @@
 import o from 'ospec'
-// import ethers from 'ethers'
 import { compileTrim } from '../../dist/trim/index.js'
 import { getOpcodesForTrim } from '../../dist/interop.js'
 import { pad } from '../../dist/util.js'
 
 import { defaultAbiCoder as AbiCoder, Interface } from '@ethersproject/abi'
-import { BN, Account, Address, pubToAddress, toBuffer } from 'ethereumjs-util'
-import { getOpcodesForHF } from '@ethereumjs/vm/dist/evm/opcodes/index.js'
-import TX from '@ethereumjs/tx'
-const { Transaction } = TX
-import evm from '@ethereumjs/vm'
-const { default: VM } = evm
-import ejs from '@ethereumjs/common'
-const { default: Common, Chain, Hardfork } = ejs
+import { EVM, getOpcodesForHF } from '@ethereumjs/evm'
+import { VM } from '@ethereumjs/vm'
+import { Common, Chain, Hardfork } from '@ethereumjs/common'
+import { Address, Account, hexToBytes } from '@ethereumjs/util'
+import { DefaultStateManager } from '@ethereumjs/statemanager'
+import { TransactionFactory } from '@ethereumjs/tx'
 
 const ERC20_ABI = [
   'function name()', // string
@@ -119,8 +116,10 @@ o.spec('ERC-20', function () {
   o.beforeEach(async () => {
     accounts = []
     const common = new Common({ chain: Chain.Mainnet, hardfork: Hardfork.Berlin })
-    const opcodes = getOpcodesForTrim(getOpcodesForHF(common))
-    vm = new VM({ common })
+    const opcodes = getOpcodesForTrim(getOpcodesForHF(common).opcodes)
+    const stateManager = new DefaultStateManager()
+    const evm = new EVM({ common, stateManager })
+    vm = new VM({ common, stateManager, evm })
     await makeAccount(0, 123)
 
     // Compile & deploys the contract
@@ -154,7 +153,7 @@ o.spec('ERC-20', function () {
   }
   async function runTx(index, txData) {
     const account = accounts[index]
-    const tx = Transaction.fromTxData({
+    const tx = TransactionFactory.fromTxData({
       ...txData,
       nonce: `0x${account.nonce.toString(16)}`,
     }).sign(account.privateKeyBuf)
@@ -162,7 +161,7 @@ o.spec('ERC-20', function () {
     account.nonce += 1
 
     const results = await vm.runTx({ tx })
-    const returnValue = results.execResult.returnValue.toString('hex')
+    const returnValue = Buffer.from(results.execResult.returnValue).toString('hex')
 
     // console.log('gas used: ' + results.gasUsed.toString())
     // console.log('returned: ' + results.execResult.returnValue.toString('hex'))
@@ -174,11 +173,11 @@ o.spec('ERC-20', function () {
     const keyPair = keyPairs[index]
     const account = Account.fromAccountData({
       nonce: 0,
-      balance: new BN(10).pow(new BN(18)).mul(new BN(balance))
+      balance: 10n ** 18n * BigInt(balance)
     })
-    const privateKeyBuf = toBuffer(keyPair.privateKey)
-    const publicKeyBuf = toBuffer(keyPair.publicKey)
-    const address = new Address(pubToAddress(publicKeyBuf, true))
+    const privateKeyBuf = hexToBytes(keyPair.privateKey)
+    const publicKeyBuf = hexToBytes(keyPair.publicKey)
+    const address = Address.fromPublicKey(publicKeyBuf)
     accounts[index] = {
       call: call.bind(null, index),
       nonce: 0,
