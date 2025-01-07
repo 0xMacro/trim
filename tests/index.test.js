@@ -249,6 +249,20 @@ o.spec('strings', function () {
   })
 })
 
+o.spec('notations', function () {
+  o('decimal', function () {
+    const source = `
+      (ADD 1 31)
+    `
+    const expectedBasm = `
+      PUSH1 0x1f
+      PUSH1 0x01
+      ADD
+    `
+    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+  })
+})
+
 o.spec('macros', function () {
   o('push', function () {
     const source = `
