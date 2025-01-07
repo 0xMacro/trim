@@ -27,6 +27,8 @@ o.spec('trim compile', function() {
       (MSTORE 0x40 _)
       (RETURN 0x40 0x20)
       STOP
+      0x33
+      0x4455
     `
     const expectedBasm = `
       PUSH1 0x01
@@ -40,6 +42,8 @@ o.spec('trim compile', function() {
       PUSH1 0x40
       RETURN
       STOP
+      0x33
+      0x4455
     `
     o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
   })
@@ -319,7 +323,13 @@ o.spec('math', function () {
   })
 
   o('throws on invalid terms', function () {
-    o(() => compileTrim(`(math 1 + 2 blah)`, { opcodes })).throws(`[trim] Invalid math term: 'blah'`)
+    try {
+      compileTrim(`(push (math 1 + 2 blah))`, { opcodes })
+      o('should not reach here').equals(false)
+    }
+    catch(err) {
+      o(err.message).equals(`[trim] Invalid token: 'blah'`)
+    }
   })
 })
 
@@ -375,18 +385,24 @@ o.spec('user-defined macros', function () {
     o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
   })
 
-  o('bare reference', function () {
+  o('with multiple body expressions', function () {
     const source = `
-      (def foo () 0x07)
-      (push foo)
+      (def foo () (ADD 0x01 0x02) 0x03 (push 0x04))
+      PUSH1 0x00
+      (foo)
     `
     const expectedBasm = `
-      PUSH1 0x07
+      PUSH1 0x00
+      PUSH1 0x02
+      PUSH1 0x01
+      ADD
+      0x03
+      PUSH1 0x04
     `
     o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
   })
 
-  o('special characters', function () {
+  o('implicit calls for macros starting with dollar sign', function () {
     const source = `
       (def $foo () 0x07)
       (push $foo)
@@ -398,16 +414,24 @@ o.spec('user-defined macros', function () {
       PUSH1 0x09
     `
     o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+
+    try {
+      compileTrim(`(def no () 0x05) (push no)`, { opcodes })
+      o('should not reach here').equals(false)
+    }
+    catch(err) {
+      o(err.message).equals(`[trim] Invalid token: 'no'`)
+    }
   })
 
   o('sugar compatibility', function () {
     const source = `
       (def x () 0x20)
       (x)
-      (x)
+      (push (x))
     `
     const expectedBasm = `
-      PUSH1 0x20
+      0x20
       PUSH1 0x20
     `
     o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
@@ -415,11 +439,14 @@ o.spec('user-defined macros', function () {
 
   o('with params', function () {
     const source = `
-      (def foo (x) x 0xff)
+      (def foo (x) (x 0xee 0xff) x)
       (foo ADD)
     `
     const expectedBasm = `
-      ADD PUSH1 0xff
+      PUSH1 0xff
+      PUSH1 0xee
+      ADD
+      ADD
     `
     o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
   })
@@ -430,7 +457,7 @@ o.spec('user-defined macros', function () {
       PUSH1 0x10
       #bar
       PUSH1 0x20
-      (id #bar)
+      (push (id #bar))
     `
     const expectedBasm = `
       PUSH1 0x10

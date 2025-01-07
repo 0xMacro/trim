@@ -6,120 +6,110 @@ const HEX_VAL = /^0x[0-9a-f]+$/
 const DEC_VAL = /^[0-9]+$/
 const BYTE_COUNT_VAL = /^([0-9]+)(byte|word)s?$/
 
+const MACRO_LOOP_LIMIT = parseInt(process.env.MACRO_LOOP_LIMIT || '', 10) || 250
+
 export function generateBytecodeAst(sexps: ToplevelSexp, opcodes: OpcodeDef[], macros: MacroDefs) {
   const opcodesByAsm = getBackwardsFriendlyOpcodesByAsm(opcodes)
-  return sexps.map(exp => _generateBytecodeAst(exp, opcodesByAsm, { macros, level: 0, inMacro: false }))
+  return sexps.flatMap(exp => _generateBytecodeAst(exp, opcodesByAsm, { macros, level: 0, inMacro: false }))
 }
 
 function _generateBytecodeAst(exp: SexpNode, opcodesByAsm: OpcodesByAsm, ctx: {
   macros: MacroDefs
   level: number
   inMacro: boolean
-}): BytecodeAstNode {
+}): BytecodeAstNode[] {
   if (Array.isArray(exp)) {
-    if (!exp.length) return { type: 'exp', nodes: [] }
+    if (!exp.length) return []
 
-    const firstNode = _generateBytecodeAst(exp[0], opcodesByAsm, { ...ctx, level: ctx.level + 1 })
+    let firstNode = exp[0]!
 
-    if (firstNode.type === 'macro' && firstNode.name === 'def') {
+    if (Array.isArray(firstNode) && exp.length === 1) {
+      // Extraneous parens
+      return _generateBytecodeAst(firstNode, opcodesByAsm, ctx)
+    }
+    if (typeof firstNode !== 'string') {
+      throw new Error(`[trim] Invalid expression: ${JSON.stringify(firstNode)}`)
+    }
+
+    if (opcodesByAsm[firstNode]) {
+      return [{ type: 'exp', nodes: exp.flatMap(e => _generateBytecodeAst(e, opcodesByAsm, { ...ctx, level: ctx.level + 1 })) }]
+    }
+
+    if (!ctx.macros[firstNode]) {
+      throw new Error(`[trim] No such macro: '${firstNode}'`)
+    }
+    if (ctx.level > MACRO_LOOP_LIMIT) {
+      throw new Error(`[trim] Macro loop limit reached`)
+    }
+
+    if (firstNode === 'def') {
       if (ctx.level > 1) {
         throw new Error(`[trim] 'def' macro can only be on top level`)
       }
 
-      const [nameNode, paramsNode] = exp.slice(1,3).map(e =>
-        _generateBytecodeAst(e, opcodesByAsm, { ...ctx, level: 0, inMacro: true })
-      )
+      const [name, params] = exp.slice(1,3)
       const body = exp.slice(3)
 
-      if (nameNode.type !== 'atom') {
+      if (typeof name !== 'string') {
         throw new Error(`[trim] invalid def name`)
       }
-      const name = nameNode.name
 
-      if (paramsNode.type !== 'exp') {
+      if (!Array.isArray(params)) {
         throw new Error(`[trim] def '${name}' is missing parameters`)
       }
-      const paramNames = paramsNode.nodes.map(node => {
-        if (node.type !== 'atom') {
-          throw new Error(`[trim] Invalid def '${name}' parameter type: '${node.type}'`)
+      for (let node of params) {
+        if (typeof node !== 'string') {
+          throw new Error(`[trim] Invalid def '${name}' parameter type: '${node}'`)
         }
-        return node.name
-      })
-
-      ctx.macros[name] = defineMacro(name, paramNames, body)
-
-      return { type: 'exp', nodes: [] }
-    }
-    else if (firstNode.type === 'macro' && firstNode.name === 'math') {
-      const validTerms: (string | number)[] = exp.slice(1).map(term => {
-        // Check for math specific terms first since these are not normally valid tokens
-        if (typeof term === 'string' && /^(\+|-|\*|\/)/.test(term)) {
-          return term
-        }
-
-        // Otherwise, resolve Trim terms as usual
-        const result = _generateBytecodeAst(term, {}, { ...ctx, level: ctx.level + 1, inMacro: true })
-        if (result.type !== 'literal' || result.subtype !== 'hex') {
-          // TODO: Better error message (need reverse parser)
-          throw new Error(`[trim] Invalid math term: '${'name' in result ? result.name : JSON.stringify(result)}'`)
-        }
-        return parseInt(result.value, 16)
-      })
-
-      const result = eval(validTerms.join(' '))
-      if (typeof result !== 'number') {
-        // TODO: Better error message (need reverse parser)
-        throw new Error(`[trim] Math result is not a number: '${result}'`)
       }
 
-      return { type: 'literal', subtype: 'hex', value: decToHex(result) }
-    }
-    else if (!ctx.inMacro && firstNode.type !== 'op' && firstNode.type !== 'macro') {
-      throw new Error(`[trim] First token in an expression must be a valid opcode or macro\n  Instead found: '${
-        'name' in firstNode ? firstNode.name : firstNode.type}'`)
+      ctx.macros[name] = defineMacro(name, params as string[], body)
+
+      return []
     }
     else {
-      const restNodes = exp.slice(1).map(e => _generateBytecodeAst(e, opcodesByAsm, { ...ctx, level: ctx.level + 1 }))
-      return { type: 'exp', nodes: ([] as typeof restNodes).concat(firstNode, restNodes) }
+      function parseSexp(sexp: SexpNode) {
+        return _generateBytecodeAst(sexp, opcodesByAsm, { ...ctx, inMacro: true, level: ctx.level + 1 })
+      }
+      const replaced = ctx.macros[firstNode].call({ parseSexp, level: ctx.level }, ...exp.slice(1))
+      return replaced.flatMap(node => _generateBytecodeAst(node, opcodesByAsm, { ...ctx, level: ctx.level + 1 }))
     }
   }
   else if (typeof exp !== 'string') {
-    return exp
+    return [exp]
+  }
+  else if (ctx.macros[exp] && exp[0] === '$') {
+    // Allow bare macro calls, e.g. `(push myMacro)
+    return _generateBytecodeAst([exp], opcodesByAsm, ctx)
   }
   else if (exp === '_') {
-    return { type: 'top' }
+    return [{ type: 'top' }]
   }
   else if (exp[0] === '#') {
-    return { type: 'label', name: exp }
+    return [{ type: 'label', name: exp }]
   }
   else if (exp.startsWith('"') && exp.endsWith('"')) {
-    return { type: 'literal', subtype: 'string', value: exp.slice(1, exp.length - 1) }
+    return [{ type: 'literal', subtype: 'string', value: exp.slice(1, exp.length - 1) }]
   }
   else if (HEX_VAL.test(exp)) {
     let bytes = exp.slice(2)
     if (bytes.length % 2 === 1) {
       bytes = '0' + bytes.slice(2)
     }
-    return { type: 'literal', subtype: 'hex', value: bytes }
+    return [{ type: 'literal', subtype: 'hex', value: bytes }]
   }
   else if (DEC_VAL.test(exp)) {
-    return { type: 'literal', subtype: 'hex', value: decToHex(parseInt(exp, 10)) }
+    return [{ type: 'literal', subtype: 'hex', value: decToHex(parseInt(exp, 10)) }]
   }
   else if (BYTE_COUNT_VAL.test(exp)) {
     const m = exp.match(BYTE_COUNT_VAL)!
     const count = parseInt(m[1], 10)
     const mult = m[2] === 'byte' ? 1 : 32
-    return { type: 'literal', subtype: 'hex', value: decToHex(count * mult) }
+    return [{ type: 'literal', subtype: 'hex', value: decToHex(count * mult) }]
   }
   else if (opcodesByAsm[exp]) {
     const op = opcodesByAsm[exp]
-    return { type: 'op', bytes: op.hex, push: op.asm.startsWith('PUSH') }
-  }
-  else if (ctx.macros[exp]) {
-    return { type: 'macro', name: exp }
-  }
-  else if (/^[a-z$]/.test(exp[0])) {
-    return { type: 'atom', name: exp }
+    return [{ type: 'op', bytes: op.hex, push: op.asm.startsWith('PUSH') }]
   }
   else {
     throw new Error(`[trim] Invalid token: '${exp}'`)
@@ -210,21 +200,6 @@ function _generateBytecode(ast: BytecodeAstNode[], ctx: {
   opcodesByAsm: OpcodesByAsm
   registerLabel: (name: string) => (() => string)
 }): (string | (() => string))[] {
-
-  let limit = parseInt(process.env.MACRO_LOOP_LIMIT || '', 10) || 250
-  while (ast.length && ast[0].type === 'macro' && limit > 0) {
-    ast = ctx.macros[ast[0].name].call({
-      parseSexp(sexp) {
-        return _generateBytecodeAst(sexp, ctx.opcodesByAsm, { ...ctx, inMacro: true })
-      },
-    }, ...ast.slice(1))
-    ast = ast.reverse()
-    limit -= 1
-  }
-  if (ast.length && ast[0].type === 'macro' && limit === 0) {
-    throw new Error(`[trim] Macro loop limit reached`)
-  }
-
   return ast.slice().reverse().flatMap((node, i) => {
     if (node.type === 'top' && ctx.seenTop()) {
       throw new Error(`[trim] Multiple top expressions (TODO)`)

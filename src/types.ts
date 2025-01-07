@@ -17,7 +17,6 @@ export type BytecodeAstNode =
   | { type: 'top' }
   | { type: 'literal', subtype: 'hex' | 'string', value: string }
   | { type: 'label', name: string }
-  | { type: 'macro', name: string }
   | ExpAtom
   | ExpNode
 
@@ -30,8 +29,9 @@ export type ExpNode = {
 
 export type MacroDefs = Record<string,MacroFn>
 
-export type MacroFn = (this: MacroCtx, ...args: BytecodeAstNode[]) => BytecodeAstNode[]
+export type MacroFn = (this: MacroCtx, ...args: SexpNode[]) => SexpNode[]
 
 export type MacroCtx = {
-  parseSexp: (sexp: SexpNode) => BytecodeAstNode
+  level: number
+  parseSexp: (sexp: SexpNode) => BytecodeAstNode[]
 }
