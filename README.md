@@ -20,7 +20,7 @@ Then use the binary...
 % trim myfile.trim
 0x6100...
 
-echo '(ADD 0x00 0x01)' | trim
+% echo '(ADD 0x00 0x01)' | trim
 0x6001600001
 ```
 
