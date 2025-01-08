@@ -2,8 +2,9 @@ import o from 'ospec'
 import { pad } from '../../dist/util.js'
 
 import { makeFullExampleVm } from './_test-helper.js'
+import { Interface } from '@ethersproject/abi'
 
-const ERC20_ABI = [
+const ERC20_ABI = new Interface([
   'function name()', // string
   'function symbol()', // string
   'function decimals()', // uint8
@@ -64,7 +65,7 @@ const ERC20_ABI = [
   //   "name": "Transfer",
   //   "type": "event"
   // }
-]
+])
 
 
 o.spec('ERC-20', function () {
@@ -102,7 +103,7 @@ o.spec('ERC-20', function () {
     (RETURN 0x00 0x20)
   `
 
-  const vm = makeFullExampleVm({ source, sourceAbi: ERC20_ABI })
+  const vm = makeFullExampleVm({ source })
 
   o.beforeEach(async () => {
     await vm.setup()
@@ -110,7 +111,7 @@ o.spec('ERC-20', function () {
 
   o('balanceOf', async () => {
     const [alice] = vm.accounts
-    const {results, returnValue} = await alice.call(vm.contractAddr, vm.abi, 'balanceOf(address)', [alice.address])
+    const {results, returnValue} = await alice.call(vm.contractAddr, ERC20_ABI, 'balanceOf(address)', [alice.address])
     o(returnValue).equals(pad('22b', 64)) // 555 in hex
   })
 })

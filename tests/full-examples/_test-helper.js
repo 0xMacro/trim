@@ -1,5 +1,6 @@
 import { compileTrim } from '../../dist/trim/index.js'
 import { getOpcodesForTrim } from '../../dist/interop.js'
+import { stubbedContract } from '../../dist/templates.js'
 
 import { defaultAbiCoder as AbiCoder, Interface } from '@ethersproject/abi'
 import { EVM, getOpcodesForHF } from '@ethereumjs/evm'
@@ -9,15 +10,14 @@ import { Address, Account, hexToBytes } from '@ethereumjs/util'
 import { DefaultStateManager } from '@ethereumjs/statemanager'
 import { TransactionFactory } from '@ethereumjs/tx'
 
-export function makeFullExampleVm({ source, sourceAbi }) {
-  const abi = new Interface(sourceAbi)
-
+export function makeFullExampleVm({ source }) {
   let accounts, vm, contractAddr
+
+  const common = new Common({ chain: Chain.Mainnet, hardfork: Hardfork.Berlin })
+  const opcodes = getOpcodesForTrim(getOpcodesForHF(common).opcodes)
 
   async function setup() {
     accounts = []
-    const common = new Common({ chain: Chain.Mainnet, hardfork: Hardfork.Berlin })
-    const opcodes = getOpcodesForTrim(getOpcodesForHF(common).opcodes)
     const stateManager = new DefaultStateManager()
     const evm = new EVM({ common, stateManager })
     vm = new VM({ common, stateManager, evm })
@@ -83,9 +83,26 @@ export function makeFullExampleVm({ source, sourceAbi }) {
     await vm.stateManager.putAccount(address, account)
   }
 
+  async function injectCode(address, code) {
+    const addressObj = Address.fromString(address)
+    await vm.stateManager.putContractCode(addressObj, hexToBytes(code))
+
+    // Create account if it doesn't exist
+    const account = await vm.stateManager.getAccount(addressObj) || Account.fromAccountData({
+      nonce: 0,
+      balance: 0n
+    })
+    await vm.stateManager.putAccount(addressObj, account)
+  }
+
+  async function mockContract(address, stubs) {
+    const source = stubbedContract(stubs)
+    await injectCode(address, compileTrim(source, { opcodes }))
+  }
+
   return {
     setup,
-    get abi() { return abi },
+    mockContract,
     get accounts() { return accounts },
     get contractAddr() { return contractAddr },
   }
