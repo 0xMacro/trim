@@ -1,6 +1,6 @@
 {
-  "name": "@0xmacro/trim",
-  "version": "0.9.2",
+  "name": "trim-evm",
+  "version": "0.10.0",
   "description": "",
   "main": "dist/index.js",
   "bin": {
