@@ -2,7 +2,7 @@ import { BytecodeAstNode, MacroDefs, OpcodeDef, OpcodesByAsm, SexpNode, Toplevel
 import { prop, Prop, pad, getBackwardsFriendlyOpcodesByAsm, decToHex } from "../util.js"
 import { defineMacro } from "./macros.js"
 
-const HEX_VAL = /^0x[0-9a-f]+$/
+const HEX_VAL = /^0x[0-9a-fA-F]+$/
 const DEC_VAL = /^[0-9]+$/
 const BYTE_COUNT_VAL = /^([0-9]+)(byte|word)s?$/
 
