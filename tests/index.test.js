@@ -3,7 +3,6 @@ import {compileTrim} from '../dist/trim/index.js'
 import {parseTrim} from '../dist/trim/parse.js'
 import {compileBasm} from '../dist/basm.js'
 import {Pos} from '../dist/util.js'
-import {opcodes} from './_test-helper.js'
 
 o('trim parse', function () {
   const source = `
@@ -45,7 +44,7 @@ o.spec('trim compile', function() {
       0x33
       0x4455
     `
-    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+    o(compileTrim(source)).equals(compileBasm(expectedBasm))
   })
 
   o('first level swap 1', function () {
@@ -59,7 +58,7 @@ o.spec('trim compile', function() {
       SWAP1
       MSTORE
     `
-    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+    o(compileTrim(source)).equals(compileBasm(expectedBasm))
   })
 
   o('first level swap 2', function () {
@@ -76,7 +75,7 @@ o.spec('trim compile', function() {
       ADDMOD
       POP
     `
-    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+    o(compileTrim(source)).equals(compileBasm(expectedBasm))
   })
 
   o('first level swap 6', function () {
@@ -97,7 +96,7 @@ o.spec('trim compile', function() {
       CALL
       POP
     `
-    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+    o(compileTrim(source)).equals(compileBasm(expectedBasm))
   })
 
   o('push label', function () {
@@ -119,7 +118,7 @@ o.spec('trim compile', function() {
       ADD
       PUSH1 0x03
     `
-    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+    o(compileTrim(source)).equals(compileBasm(expectedBasm))
   })
 
   o('before and after #runtime labels', function () {
@@ -149,7 +148,7 @@ o.spec('trim compile', function() {
       PUSH1 0x03
       PUSH2 0x0005
     `
-    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+    o(compileTrim(source)).equals(compileBasm(expectedBasm))
   })
 
   o('comments', function () {
@@ -165,7 +164,7 @@ o.spec('trim compile', function() {
       ADD
       PUSH1 0x04
     `
-    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+    o(compileTrim(source)).equals(compileBasm(expectedBasm))
   })
 
   o('full example 1', function () {
@@ -237,7 +236,7 @@ o.spec('trim compile', function() {
       RETURN
       JUMPDEST
     `
-    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+    o(compileTrim(source)).equals(compileBasm(expectedBasm))
   })
 })
 
@@ -249,7 +248,7 @@ o.spec('strings', function () {
     const expectedBasm = `
       PUSH3 0x412243
     `
-    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+    o(compileTrim(source)).equals(compileBasm(expectedBasm))
   })
 })
 
@@ -263,7 +262,7 @@ o.spec('notations', function () {
       PUSH1 0x01
       ADD
     `
-    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+    o(compileTrim(source)).equals(compileBasm(expectedBasm))
   })
 
   o('byte', function () {
@@ -275,7 +274,7 @@ o.spec('notations', function () {
       PUSH1 0x01
       ADD
     `
-    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+    o(compileTrim(source)).equals(compileBasm(expectedBasm))
   })
 
   o('word', function () {
@@ -287,7 +286,7 @@ o.spec('notations', function () {
       PUSH1 0x20
       ADD
     `
-    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+    o(compileTrim(source)).equals(compileBasm(expectedBasm))
   })
 })
 
@@ -299,7 +298,7 @@ o.spec('math', function () {
     const expectedBasm = `
       PUSH1 0x0b
     `
-    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+    o(compileTrim(source)).equals(compileBasm(expectedBasm))
   })
 
   o('notations', function () {
@@ -309,7 +308,7 @@ o.spec('math', function () {
     const expectedBasm = `
       PUSH1 0x80
     `
-    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+    o(compileTrim(source)).equals(compileBasm(expectedBasm))
   })
 
   o('subexpressions', function () {
@@ -319,12 +318,12 @@ o.spec('math', function () {
     const expectedBasm = `
       PUSH1 0x07
     `
-    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+    o(compileTrim(source)).equals(compileBasm(expectedBasm))
   })
 
   o('throws on invalid terms', function () {
     try {
-      compileTrim(`(push (math 1 + 2 blah))`, { opcodes })
+      compileTrim(`(push (math 1 + 2 blah))`)
       o('should not reach here').equals(false)
     }
     catch(err) {
@@ -341,7 +340,7 @@ o.spec('macros', function () {
     const expectedBasm = `
       PUSH3 0x414243
     `
-    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+    o(compileTrim(source)).equals(compileBasm(expectedBasm))
   })
 
   o('abi/fn-selector', function () {
@@ -353,7 +352,7 @@ o.spec('macros', function () {
       PUSH4 0xc2985578
       EQ
     `
-    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+    o(compileTrim(source)).equals(compileBasm(expectedBasm))
   })
 
 
@@ -375,7 +374,7 @@ o.spec('macros', function () {
       PUSH1 0x0b
       PUSH1 0xcb
     `
-    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+    o(compileTrim(source)).equals(compileBasm(expectedBasm))
   })
 })
 
@@ -390,7 +389,7 @@ o.spec('user-defined macros', function () {
       STOP
       STOP
     `
-    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+    o(compileTrim(source)).equals(compileBasm(expectedBasm))
   })
 
   o('with a top expression', function () {
@@ -404,7 +403,7 @@ o.spec('user-defined macros', function () {
       PUSH1 0x01
       EQ
     `
-    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+    o(compileTrim(source)).equals(compileBasm(expectedBasm))
   })
 
   o('with multiple body expressions', function () {
@@ -421,7 +420,7 @@ o.spec('user-defined macros', function () {
       0x03
       PUSH1 0x04
     `
-    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+    o(compileTrim(source)).equals(compileBasm(expectedBasm))
   })
 
   o('implicit calls for macros starting with dollar sign', function () {
@@ -435,10 +434,10 @@ o.spec('user-defined macros', function () {
       PUSH1 0x07
       PUSH1 0x09
     `
-    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+    o(compileTrim(source)).equals(compileBasm(expectedBasm))
 
     try {
-      compileTrim(`(def no () 0x05) (push no)`, { opcodes })
+      compileTrim(`(def no () 0x05) (push no)`)
       o('should not reach here').equals(false)
     }
     catch(err) {
@@ -456,7 +455,7 @@ o.spec('user-defined macros', function () {
       0x20
       PUSH1 0x20
     `
-    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+    o(compileTrim(source)).equals(compileBasm(expectedBasm))
   })
 
   o('with params', function () {
@@ -470,7 +469,7 @@ o.spec('user-defined macros', function () {
       ADD
       ADD
     `
-    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+    o(compileTrim(source)).equals(compileBasm(expectedBasm))
   })
 
   o('using labels', function () {
@@ -486,7 +485,7 @@ o.spec('user-defined macros', function () {
       PUSH1 0x20
       PUSH2 0x0002
     `
-    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+    o(compileTrim(source)).equals(compileBasm(expectedBasm))
   })
 
   o('using a nested macro', function () {
@@ -497,7 +496,7 @@ o.spec('user-defined macros', function () {
     const expectedBasm = `
       PUSH4 0xcfae3217
     `
-    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+    o(compileTrim(source)).equals(compileBasm(expectedBasm))
   })
 
   o('using a nested def', function () {
@@ -517,12 +516,12 @@ o.spec('user-defined macros', function () {
       PUSH1 0x20
       MSTORE
     `
-    o(compileTrim(source, { opcodes })).equals(compileBasm(expectedBasm, { opcodes }))
+    o(compileTrim(source)).equals(compileBasm(expectedBasm))
   })
 })
 
 o.spec('trim errors', function () {
-  const compile = (src) => compileTrim(src, { opcodes })
+  const compile = (src) => compileTrim(src)
 
   o('multiple tops', function () {
     o(() => compile(`(ADD _ _)`)).throws('[trim] Multiple top expressions (TODO)')
@@ -537,6 +536,6 @@ o.spec('trim errors', function () {
       ("Hi")
     `
     // TODO: Throw better errors
-    // o(() => compileTrim(source, { opcodes })).throws('[trim] First token in an expression must be a valid opcode or macro')
+    // o(() => compileTrim(source)).throws('[trim] First token in an expression must be a valid opcode or macro')
   })
 })

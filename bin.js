@@ -1,9 +1,7 @@
 #!/usr/bin/env node
 
 import { readFileSync } from 'fs'
-import { compileTrim, getOpcodesForTrim } from './dist/index.js'
-import { getOpcodesForHF } from '@ethereumjs/evm'
-import { Common, Chain, Hardfork } from '@ethereumjs/common'
+import { compileTrim } from './dist/index.js'
 
 // Check if we're receiving data from STDIN
 const isStdin = !process.stdin.isTTY
@@ -37,8 +35,5 @@ if (isStdin) {
 }
 
 function go(source) {
-  const common = new Common({ chain: Chain.Mainnet, hardfork: Hardfork.Cancun })
-  const opcodes = getOpcodesForTrim(getOpcodesForHF(common).opcodes)
-
-  console.log(compileTrim(source, { opcodes }))
+  console.log(compileTrim(source))
 }

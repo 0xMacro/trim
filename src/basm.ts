@@ -1,11 +1,13 @@
+import { standardOpcodes } from './opcodes.js'
 import { OpcodeDef } from './types'
 import { getBackwardsFriendlyOpcodesByAsm, pad } from './util.js'
 
 type Options = {
-  opcodes: OpcodeDef[]
+  opcodes?: OpcodeDef[]
 }
-export function compileBasm(input: string, options: Options) {
-  const opcodesByAsm = getBackwardsFriendlyOpcodesByAsm(options.opcodes)
+export function compileBasm(input: string, options: Options = {}) {
+  const opcodes = options.opcodes || standardOpcodes
+  const opcodesByAsm = getBackwardsFriendlyOpcodesByAsm(opcodes)
 
   const code: string[] = []
   for (let line of input.split(/\s*[\n\r]+\s*/)) {

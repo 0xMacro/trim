@@ -176,3 +176,8 @@ These are some features we're considering adding to Trim. Create an issue to dis
 - [ ] Hardhat integration
 - [ ] More standard ABI macros
 - [ ] Imports
+
+## Developing
+
+- Run `tsc --watch` then `npm test`
+- Run `node update-opcodes.js` if/when the standard opcode list needs to be updated
