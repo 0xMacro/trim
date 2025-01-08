@@ -42,6 +42,15 @@ export const standardMacros: MacroDefs = {
     return [['push', `0x${fnId}`]]
   },
 
+  'init-runtime-code'() {
+    return [
+      ['SUB', 'CODESIZE', '#runtime'],
+      'DUP1',
+      ['CODECOPY', '0x00', '#runtime', '_'],
+      ['RETURN', '0x00', '_']
+    ]
+  },
+
   // Empty definitions for simplifying logic elsewhere
   def() { return [] },
   defcounter() { return [] },
