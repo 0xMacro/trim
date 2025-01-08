@@ -1,5 +1,18 @@
 # Trim
 
+<p align="center">
+  <picture>
+    <!-- <source media="(prefers-color-scheme: dark)" srcset="./public/trim-dark.png"/> -->
+    <img
+      src="./public/trim.png"
+      alt="Logo for the Trim programming language"
+      loading="lazy"
+      decoding="async"
+      width="440px"
+    />
+  </picture>
+</p>
+
 Trim is a opcode-oriented programming language for the Ethereum Virtual Machine (EVM). It offers syntax for writing highly optimized code in a more readable manner, without introducing mental or complexity overhead.
 
 - [Try it in your browser!](https://0xmacro.com/library/trim/repl)
