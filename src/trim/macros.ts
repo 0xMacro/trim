@@ -51,9 +51,40 @@ export const standardMacros: MacroDefs = {
     ]
   },
 
+  'revert': makeReMacro('REVERT'),
+  'return': makeReMacro('RETURN'),
+
   // Empty definitions for simplifying logic elsewhere
   def() { return [] },
   defcounter() { return [] },
+}
+
+function makeReMacro(opcode: 'REVERT' | 'RETURN'): MacroFn {
+  let labelCounter = 0
+  return function returnRevertMacro (msg, cond) {
+    // It's safe to always thrash memory since we're about to exit anyway
+    const ops = [
+      ['MSTORE', '0', msg || '_'],
+      [opcode, '0', '0x20'],
+    ]
+    if (cond) {
+      // Support both (revert "msg" (term1 term2))
+      // and (revert "msg" term1) syntax
+      const _cond: SexpNode[][] = Array.isArray(cond) && Array.isArray(cond[0])
+        ? cond as any
+        : [cond]
+      let label = `#${opcode.toLowerCase()}-if-skip-${labelCounter++}`
+      return [
+        ..._cond,
+        ['ISZERO', '_'],
+        ['JUMPI', label, '_'],
+        ...ops,
+        label,
+        'JUMPDEST'
+      ]
+    }
+    return ops
+  }
 }
 
 export function defineMacro(name: string, params: string[], body: SexpNode[]): MacroFn {
