@@ -10,6 +10,11 @@ export type OpcodeDef = {
   asm: string
 }
 
+export type OpcodeMeta = {
+  pops: number
+  pushes: number
+}
+
 export type OpcodesByAsm = Record<string, OpcodeDef>
 
 export type BytecodeAstNode =

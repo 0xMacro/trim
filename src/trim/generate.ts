@@ -1,4 +1,4 @@
-import { BytecodeAstNode, MacroDefs, OpcodeDef, OpcodesByAsm, SexpNode, ToplevelSexp } from "../types"
+import { BytecodeAstNode, MacroDefs, OpcodeDef, OpcodeMeta, OpcodesByAsm, SexpNode, ToplevelSexp } from "../types"
 import { prop, Prop, pad, getBackwardsFriendlyOpcodesByAsm, decToHex } from "../util.js"
 import { defineMacro } from "./macros.js"
 
@@ -8,17 +8,23 @@ const BYTE_COUNT_VAL = /^([0-9]+)(byte|word)s?$/
 
 const MACRO_LOOP_LIMIT = parseInt(process.env.MACRO_LOOP_LIMIT || '', 10) || 250
 
-export function generateBytecodeAst(sexps: ToplevelSexp, opcodes: OpcodeDef[], macros: MacroDefs) {
+type GenerateBytecodeAstOptions = {
+  macros: MacroDefs
+  opcodes: OpcodeDef[]
+}
+export function generateBytecodeAst(sexps: ToplevelSexp, { opcodes, macros }: GenerateBytecodeAstOptions) {
   const opcodesByAsm = getBackwardsFriendlyOpcodesByAsm(opcodes)
-  return sexps.flatMap(exp => _generateBytecodeAst(exp, opcodesByAsm, { macros, level: 0, limit: 0, inMacro: false }))
+  return sexps.flatMap(exp => _generateBytecodeAst(exp, { opcodesByAsm, macros, level: 0, limit: 0, inMacro: false }))
 }
 
-function _generateBytecodeAst(exp: SexpNode, opcodesByAsm: OpcodesByAsm, ctx: {
+function _generateBytecodeAst(exp: SexpNode, ctx: {
+  opcodesByAsm: OpcodesByAsm
   macros: MacroDefs
   level: number
   limit: number
   inMacro: boolean
 }): BytecodeAstNode[] {
+  const { opcodesByAsm } = ctx
   if (Array.isArray(exp)) {
     if (!exp.length) return []
 
@@ -26,14 +32,14 @@ function _generateBytecodeAst(exp: SexpNode, opcodesByAsm: OpcodesByAsm, ctx: {
 
     if (Array.isArray(firstNode) && exp.length === 1) {
       // Extraneous parens
-      return _generateBytecodeAst(firstNode, opcodesByAsm, ctx)
+      return _generateBytecodeAst(firstNode, ctx)
     }
     if (typeof firstNode !== 'string') {
       throw new Error(`[trim] Invalid expression: ${JSON.stringify(firstNode)}`)
     }
 
     if (opcodesByAsm[firstNode]) {
-      return [{ type: 'exp', nodes: exp.flatMap(e => _generateBytecodeAst(e, opcodesByAsm, { ...ctx, level: ctx.level + 1 })) }]
+      return [{ type: 'exp', nodes: exp.flatMap(e => _generateBytecodeAst(e, { ...ctx, level: ctx.level + 1 })) }]
     }
 
     if (!ctx.macros[firstNode]) {
@@ -75,7 +81,7 @@ function _generateBytecodeAst(exp: SexpNode, opcodesByAsm: OpcodesByAsm, ctx: {
       }
       const start = (function () {
         if (!startNode) return 0
-        const [s] = _generateBytecodeAst(startNode, opcodesByAsm, { ...ctx, level: ctx.level + 1 })
+        const [s] = _generateBytecodeAst(startNode, { ...ctx, level: ctx.level + 1 })
         if (s.type !== 'literal' || s.subtype !== 'hex') {
           throw new Error(`[trim] defcounter requires a literal start value`)
         }
@@ -87,7 +93,7 @@ function _generateBytecodeAst(exp: SexpNode, opcodesByAsm: OpcodesByAsm, ctx: {
         let val = counter
         if (op === '++' || op === '+=') {
           const [amount] = inc
-            ? _generateBytecodeAst(inc, opcodesByAsm, { ...ctx, level: ctx.level + 1 })
+            ? _generateBytecodeAst(inc, { ...ctx, level: ctx.level + 1 })
             : [{ type: 'literal', subtype: 'hex', value: '01' }]
 
           if (amount.type !== 'literal' || amount.subtype !== 'hex') {
@@ -106,10 +112,10 @@ function _generateBytecodeAst(exp: SexpNode, opcodesByAsm: OpcodesByAsm, ctx: {
     }
     else {
       function parseSexp(sexp: SexpNode) {
-        return _generateBytecodeAst(sexp, opcodesByAsm, { ...ctx, inMacro: true, level: ctx.level + 1 })
+        return _generateBytecodeAst(sexp, { ...ctx, inMacro: true, level: ctx.level + 1 })
       }
       const replaced = ctx.macros[firstNode].call({ parseSexp, level: ctx.level }, ...exp.slice(1))
-      return replaced.flatMap(node => _generateBytecodeAst(node, opcodesByAsm, { ...ctx, limit: ctx.limit + 1 }))
+      return replaced.flatMap(node => _generateBytecodeAst(node, { ...ctx, limit: ctx.limit + 1 }))
     }
   }
   else if (typeof exp !== 'string') {
@@ -117,7 +123,7 @@ function _generateBytecodeAst(exp: SexpNode, opcodesByAsm: OpcodesByAsm, ctx: {
   }
   else if (ctx.macros[exp] && exp[0] === '$') {
     // Allow bare macro calls, e.g. `(push myMacro)
-    return _generateBytecodeAst([exp], opcodesByAsm, ctx)
+    return _generateBytecodeAst([exp], ctx)
   }
   else if (exp === '_') {
     return [{ type: 'top' }]
@@ -153,7 +159,12 @@ function _generateBytecodeAst(exp: SexpNode, opcodesByAsm: OpcodesByAsm, ctx: {
   }
 }
 
-export function generateBytecode(ast: BytecodeAstNode[], opcodes: OpcodeDef[], macros: MacroDefs): string[] {
+type GenerateBytecodeOptions = {
+  macros: MacroDefs
+  opcodes: OpcodeDef[]
+  opcodesMetadata: Record<string, OpcodeMeta>
+}
+export function generateBytecode(ast: BytecodeAstNode[], { opcodes, macros, opcodesMetadata }: GenerateBytecodeOptions): string[] {
   const pc = prop(0)
   const inc = (byteCount: number) => pc(pc() + byteCount)
   const labels = {} as Record<string, number>
@@ -187,6 +198,7 @@ export function generateBytecode(ast: BytecodeAstNode[], opcodes: OpcodeDef[], m
         level: 0,
         opcodesByAsm,
         registerLabel,
+        opcodesMetadata,
         append: () => {},
       })
     }
@@ -200,6 +212,7 @@ export function generateBytecode(ast: BytecodeAstNode[], opcodes: OpcodeDef[], m
         level: 0,
         opcodesByAsm,
         registerLabel,
+        opcodesMetadata,
         append(bytes) {
           trailingBytes.push(bytes)
         }
@@ -236,8 +249,9 @@ function _generateBytecode(ast: BytecodeAstNode[], ctx: {
   seenTop: Prop<boolean>
   opcodesByAsm: OpcodesByAsm
   registerLabel: (name: string) => (() => string)
+  opcodesMetadata: Record<string, OpcodeMeta>
 }): (string | (() => string))[] {
-  return ast.slice().reverse().flatMap((node, i) => {
+  return ast.slice().reverse().flatMap((node, i, exp) => {
     if (node.type === 'top' && ctx.seenTop()) {
       throw new Error(`[trim] Multiple top expressions (TODO)`)
     }
@@ -252,6 +266,10 @@ function _generateBytecode(ast: BytecodeAstNode[], ctx: {
         return [ctx.opcodesByAsm.SWAP1.hex]
       }
 
+      const firstNode = exp[exp.length - 1] // We reversed the array
+      if (firstNode.type === 'op' && ctx.opcodesMetadata[firstNode.bytes].pushes === 1) {
+        ctx.append(ctx.opcodesByAsm.SWAP1.hex)
+      }
       ctx.append(ctx.opcodesByAsm.POP.hex)
       ctx.inc(2)
       return [

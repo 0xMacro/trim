@@ -1,4 +1,4 @@
-import { standardOpcodes } from './opcodes.js'
+import { standardOpcodes } from './standard-opcodes.js'
 import { OpcodeDef } from './types'
 import { getBackwardsFriendlyOpcodesByAsm, pad } from './util.js'
 

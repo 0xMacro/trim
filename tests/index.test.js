@@ -61,39 +61,59 @@ o.spec('trim compile', function() {
     o(compileTrim(source)).equals(compileBasm(expectedBasm))
   })
 
-  o('first level swap 2', function () {
+  o('deep swap', function () {
     const source = `
       PUSH1 0x03
-      (ADDMOD _ 0x02 0x01)
+      (ADDMOD _ #after 0x01)
+      #after
     `
     const expectedBasm = `
       PUSH1 0x03
       PUSH1 0x01
-      PUSH1 0x02
+      PUSH2 0x000c
       DUP1
       SWAP3
       ADDMOD
+      SWAP1
       POP
     `
     o(compileTrim(source)).equals(compileBasm(expectedBasm))
   })
 
-  o('first level swap 6', function () {
+  o('deep swap 2', function () {
     const source = `
-      PUSH1 0x07
-      (CALL _ 0x06 0x05 0x04 0x03 0x02 0x01)
+      PUSH1 0x77
+      (CALL _ 0xff 0xee 0xdd 0xcc 0xbb 0xaa)
     `
     const expectedBasm = `
-      PUSH1 0x07
-      PUSH1 0x01
-      PUSH1 0x02
-      PUSH1 0x03
-      PUSH1 0x04
-      PUSH1 0x05
-      PUSH1 0x06
+      PUSH1 0x77
+      PUSH1 0xaa
+      PUSH1 0xbb
+      PUSH1 0xcc
+      PUSH1 0xdd
+      PUSH1 0xee
+      PUSH1 0xff
       DUP1
       SWAP7
       CALL
+      SWAP1
+      POP
+    `
+    o(compileTrim(source)).equals(compileBasm(expectedBasm))
+  })
+
+  o('deep swap with non-pushing opcode', function () {
+    const source = `
+      PUSH1 0x77
+      (CALLDATACOPY _ 0xbb 0xaa)
+    `
+    const expectedBasm = `
+      PUSH1 0x77
+      PUSH1 0xaa
+      PUSH1 0xbb
+      DUP1
+      SWAP3
+      CALLDATACOPY
       POP
     `
     o(compileTrim(source)).equals(compileBasm(expectedBasm))

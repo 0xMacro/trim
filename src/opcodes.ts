@@ -1,598 +1,151 @@
-export const standardOpcodes = [
-  {
-    "hex": "00",
-    "asm": "STOP"
-  },
-  {
-    "hex": "01",
-    "asm": "ADD"
-  },
-  {
-    "hex": "02",
-    "asm": "MUL"
-  },
-  {
-    "hex": "03",
-    "asm": "SUB"
-  },
-  {
-    "hex": "04",
-    "asm": "DIV"
-  },
-  {
-    "hex": "05",
-    "asm": "SDIV"
-  },
-  {
-    "hex": "06",
-    "asm": "MOD"
-  },
-  {
-    "hex": "07",
-    "asm": "SMOD"
-  },
-  {
-    "hex": "08",
-    "asm": "ADDMOD"
-  },
-  {
-    "hex": "09",
-    "asm": "MULMOD"
-  },
-  {
-    "hex": "0a",
-    "asm": "EXP"
-  },
-  {
-    "hex": "0b",
-    "asm": "SIGNEXTEND"
-  },
-  {
-    "hex": "10",
-    "asm": "LT"
-  },
-  {
-    "hex": "11",
-    "asm": "GT"
-  },
-  {
-    "hex": "12",
-    "asm": "SLT"
-  },
-  {
-    "hex": "13",
-    "asm": "SGT"
-  },
-  {
-    "hex": "14",
-    "asm": "EQ"
-  },
-  {
-    "hex": "15",
-    "asm": "ISZERO"
-  },
-  {
-    "hex": "16",
-    "asm": "AND"
-  },
-  {
-    "hex": "17",
-    "asm": "OR"
-  },
-  {
-    "hex": "18",
-    "asm": "XOR"
-  },
-  {
-    "hex": "19",
-    "asm": "NOT"
-  },
-  {
-    "hex": "1a",
-    "asm": "BYTE"
-  },
-  {
-    "hex": "1b",
-    "asm": "SHL"
-  },
-  {
-    "hex": "1c",
-    "asm": "SHR"
-  },
-  {
-    "hex": "1d",
-    "asm": "SAR"
-  },
-  {
-    "hex": "20",
-    "asm": "KECCAK256"
-  },
-  {
-    "hex": "30",
-    "asm": "ADDRESS"
-  },
-  {
-    "hex": "31",
-    "asm": "BALANCE"
-  },
-  {
-    "hex": "32",
-    "asm": "ORIGIN"
-  },
-  {
-    "hex": "33",
-    "asm": "CALLER"
-  },
-  {
-    "hex": "34",
-    "asm": "CALLVALUE"
-  },
-  {
-    "hex": "35",
-    "asm": "CALLDATALOAD"
-  },
-  {
-    "hex": "36",
-    "asm": "CALLDATASIZE"
-  },
-  {
-    "hex": "37",
-    "asm": "CALLDATACOPY"
-  },
-  {
-    "hex": "38",
-    "asm": "CODESIZE"
-  },
-  {
-    "hex": "39",
-    "asm": "CODECOPY"
-  },
-  {
-    "hex": "3a",
-    "asm": "GASPRICE"
-  },
-  {
-    "hex": "3b",
-    "asm": "EXTCODESIZE"
-  },
-  {
-    "hex": "3c",
-    "asm": "EXTCODECOPY"
-  },
-  {
-    "hex": "3d",
-    "asm": "RETURNDATASIZE"
-  },
-  {
-    "hex": "3e",
-    "asm": "RETURNDATACOPY"
-  },
-  {
-    "hex": "3f",
-    "asm": "EXTCODEHASH"
-  },
-  {
-    "hex": "40",
-    "asm": "BLOCKHASH"
-  },
-  {
-    "hex": "41",
-    "asm": "COINBASE"
-  },
-  {
-    "hex": "42",
-    "asm": "TIMESTAMP"
-  },
-  {
-    "hex": "43",
-    "asm": "NUMBER"
-  },
-  {
-    "hex": "44",
-    "asm": "PREVRANDAO"
-  },
-  {
-    "hex": "45",
-    "asm": "GASLIMIT"
-  },
-  {
-    "hex": "46",
-    "asm": "CHAINID"
-  },
-  {
-    "hex": "47",
-    "asm": "SELFBALANCE"
-  },
-  {
-    "hex": "48",
-    "asm": "BASEFEE"
-  },
-  {
-    "hex": "49",
-    "asm": "BLOBHASH"
-  },
-  {
-    "hex": "4a",
-    "asm": "BLOBBASEFEE"
-  },
-  {
-    "hex": "50",
-    "asm": "POP"
-  },
-  {
-    "hex": "51",
-    "asm": "MLOAD"
-  },
-  {
-    "hex": "52",
-    "asm": "MSTORE"
-  },
-  {
-    "hex": "53",
-    "asm": "MSTORE8"
-  },
-  {
-    "hex": "54",
-    "asm": "SLOAD"
-  },
-  {
-    "hex": "55",
-    "asm": "SSTORE"
-  },
-  {
-    "hex": "56",
-    "asm": "JUMP"
-  },
-  {
-    "hex": "57",
-    "asm": "JUMPI"
-  },
-  {
-    "hex": "58",
-    "asm": "PC"
-  },
-  {
-    "hex": "59",
-    "asm": "MSIZE"
-  },
-  {
-    "hex": "5a",
-    "asm": "GAS"
-  },
-  {
-    "hex": "5b",
-    "asm": "JUMPDEST"
-  },
-  {
-    "hex": "5c",
-    "asm": "TLOAD"
-  },
-  {
-    "hex": "5d",
-    "asm": "TSTORE"
-  },
-  {
-    "hex": "5e",
-    "asm": "MCOPY"
-  },
-  {
-    "hex": "5f",
-    "asm": "PUSH0"
-  },
-  {
-    "hex": "60",
-    "asm": "PUSH1"
-  },
-  {
-    "hex": "61",
-    "asm": "PUSH2"
-  },
-  {
-    "hex": "62",
-    "asm": "PUSH3"
-  },
-  {
-    "hex": "63",
-    "asm": "PUSH4"
-  },
-  {
-    "hex": "64",
-    "asm": "PUSH5"
-  },
-  {
-    "hex": "65",
-    "asm": "PUSH6"
-  },
-  {
-    "hex": "66",
-    "asm": "PUSH7"
-  },
-  {
-    "hex": "67",
-    "asm": "PUSH8"
-  },
-  {
-    "hex": "68",
-    "asm": "PUSH9"
-  },
-  {
-    "hex": "69",
-    "asm": "PUSH10"
-  },
-  {
-    "hex": "6a",
-    "asm": "PUSH11"
-  },
-  {
-    "hex": "6b",
-    "asm": "PUSH12"
-  },
-  {
-    "hex": "6c",
-    "asm": "PUSH13"
-  },
-  {
-    "hex": "6d",
-    "asm": "PUSH14"
-  },
-  {
-    "hex": "6e",
-    "asm": "PUSH15"
-  },
-  {
-    "hex": "6f",
-    "asm": "PUSH16"
-  },
-  {
-    "hex": "70",
-    "asm": "PUSH17"
-  },
-  {
-    "hex": "71",
-    "asm": "PUSH18"
-  },
-  {
-    "hex": "72",
-    "asm": "PUSH19"
-  },
-  {
-    "hex": "73",
-    "asm": "PUSH20"
-  },
-  {
-    "hex": "74",
-    "asm": "PUSH21"
-  },
-  {
-    "hex": "75",
-    "asm": "PUSH22"
-  },
-  {
-    "hex": "76",
-    "asm": "PUSH23"
-  },
-  {
-    "hex": "77",
-    "asm": "PUSH24"
-  },
-  {
-    "hex": "78",
-    "asm": "PUSH25"
-  },
-  {
-    "hex": "79",
-    "asm": "PUSH26"
-  },
-  {
-    "hex": "7a",
-    "asm": "PUSH27"
-  },
-  {
-    "hex": "7b",
-    "asm": "PUSH28"
-  },
-  {
-    "hex": "7c",
-    "asm": "PUSH29"
-  },
-  {
-    "hex": "7d",
-    "asm": "PUSH30"
-  },
-  {
-    "hex": "7e",
-    "asm": "PUSH31"
-  },
-  {
-    "hex": "7f",
-    "asm": "PUSH32"
-  },
-  {
-    "hex": "80",
-    "asm": "DUP1"
-  },
-  {
-    "hex": "81",
-    "asm": "DUP2"
-  },
-  {
-    "hex": "82",
-    "asm": "DUP3"
-  },
-  {
-    "hex": "83",
-    "asm": "DUP4"
-  },
-  {
-    "hex": "84",
-    "asm": "DUP5"
-  },
-  {
-    "hex": "85",
-    "asm": "DUP6"
-  },
-  {
-    "hex": "86",
-    "asm": "DUP7"
-  },
-  {
-    "hex": "87",
-    "asm": "DUP8"
-  },
-  {
-    "hex": "88",
-    "asm": "DUP9"
-  },
-  {
-    "hex": "89",
-    "asm": "DUP10"
-  },
-  {
-    "hex": "8a",
-    "asm": "DUP11"
-  },
-  {
-    "hex": "8b",
-    "asm": "DUP12"
-  },
-  {
-    "hex": "8c",
-    "asm": "DUP13"
-  },
-  {
-    "hex": "8d",
-    "asm": "DUP14"
-  },
-  {
-    "hex": "8e",
-    "asm": "DUP15"
-  },
-  {
-    "hex": "8f",
-    "asm": "DUP16"
-  },
-  {
-    "hex": "90",
-    "asm": "SWAP1"
-  },
-  {
-    "hex": "91",
-    "asm": "SWAP2"
-  },
-  {
-    "hex": "92",
-    "asm": "SWAP3"
-  },
-  {
-    "hex": "93",
-    "asm": "SWAP4"
-  },
-  {
-    "hex": "94",
-    "asm": "SWAP5"
-  },
-  {
-    "hex": "95",
-    "asm": "SWAP6"
-  },
-  {
-    "hex": "96",
-    "asm": "SWAP7"
-  },
-  {
-    "hex": "97",
-    "asm": "SWAP8"
-  },
-  {
-    "hex": "98",
-    "asm": "SWAP9"
-  },
-  {
-    "hex": "99",
-    "asm": "SWAP10"
-  },
-  {
-    "hex": "9a",
-    "asm": "SWAP11"
-  },
-  {
-    "hex": "9b",
-    "asm": "SWAP12"
-  },
-  {
-    "hex": "9c",
-    "asm": "SWAP13"
-  },
-  {
-    "hex": "9d",
-    "asm": "SWAP14"
-  },
-  {
-    "hex": "9e",
-    "asm": "SWAP15"
-  },
-  {
-    "hex": "9f",
-    "asm": "SWAP16"
-  },
-  {
-    "hex": "a0",
-    "asm": "LOG0"
-  },
-  {
-    "hex": "a1",
-    "asm": "LOG1"
-  },
-  {
-    "hex": "a2",
-    "asm": "LOG2"
-  },
-  {
-    "hex": "a3",
-    "asm": "LOG3"
-  },
-  {
-    "hex": "a4",
-    "asm": "LOG4"
-  },
-  {
-    "hex": "f0",
-    "asm": "CREATE"
-  },
-  {
-    "hex": "f1",
-    "asm": "CALL"
-  },
-  {
-    "hex": "f2",
-    "asm": "CALLCODE"
-  },
-  {
-    "hex": "f3",
-    "asm": "RETURN"
-  },
-  {
-    "hex": "f4",
-    "asm": "DELEGATECALL"
-  },
-  {
-    "hex": "f5",
-    "asm": "CREATE2"
-  },
-  {
-    "hex": "fa",
-    "asm": "STATICCALL"
-  },
-  {
-    "hex": "fd",
-    "asm": "REVERT"
-  },
-  {
-    "hex": "fe",
-    "asm": "INVALID"
-  },
-  {
-    "hex": "ff",
-    "asm": "SELFDESTRUCT"
-  }
-]
+export const standardOpcodesMetadata = {
+  "00": { pops: 0, pushes: 0, name: 'STOP' },
+  "01": { pops: 2, pushes: 1, name: 'ADD' },
+  "02": { pops: 2, pushes: 1, name: 'MUL' },
+  "03": { pops: 2, pushes: 1, name: 'SUB' },
+  "04": { pops: 2, pushes: 1, name: 'DIV' },
+  "05": { pops: 2, pushes: 1, name: 'SDIV' },
+  "06": { pops: 2, pushes: 1, name: 'MOD' },
+  "07": { pops: 2, pushes: 1, name: 'SMOD' },
+  "08": { pops: 3, pushes: 1, name: 'ADDMOD' },
+  "09": { pops: 3, pushes: 1, name: 'MULMOD' },
+  "0a": { pops: 2, pushes: 1, name: 'EXP' },
+  "0b": { pops: 2, pushes: 1, name: 'SIGNEXTEND' },
+  "10": { pops: 2, pushes: 1, name: 'LT' },
+  "11": { pops: 2, pushes: 1, name: 'GT' },
+  "12": { pops: 2, pushes: 1, name: 'SLT' },
+  "13": { pops: 2, pushes: 1, name: 'SGT' },
+  "14": { pops: 2, pushes: 1, name: 'EQ' },
+  "15": { pops: 1, pushes: 1, name: 'ISZERO' },
+  "16": { pops: 2, pushes: 1, name: 'AND' },
+  "17": { pops: 2, pushes: 1, name: 'OR' },
+  "18": { pops: 2, pushes: 1, name: 'XOR' },
+  "19": { pops: 1, pushes: 1, name: 'NOT' },
+  "1a": { pops: 2, pushes: 1, name: 'BYTE' },
+  "1b": { pops: 2, pushes: 1, name: 'SHL' },
+  "1c": { pops: 2, pushes: 1, name: 'SHR' },
+  "1d": { pops: 2, pushes: 1, name: 'SAR' },
+  "20": { pops: 2, pushes: 1, name: 'KECCAK256' },
+  "30": { pops: 0, pushes: 1, name: 'ADDRESS' },
+  "31": { pops: 1, pushes: 1, name: 'BALANCE' },
+  "32": { pops: 0, pushes: 1, name: 'ORIGIN' },
+  "33": { pops: 0, pushes: 1, name: 'CALLER' },
+  "34": { pops: 0, pushes: 1, name: 'CALLVALUE' },
+  "35": { pops: 1, pushes: 1, name: 'CALLDATALOAD' },
+  "36": { pops: 0, pushes: 1, name: 'CALLDATASIZE' },
+  "37": { pops: 3, pushes: 0, name: 'CALLDATACOPY' },
+  "38": { pops: 0, pushes: 1, name: 'CODESIZE' },
+  "39": { pops: 3, pushes: 0, name: 'CODECOPY' },
+  "3a": { pops: 0, pushes: 1, name: 'GASPRICE' },
+  "3b": { pops: 1, pushes: 1, name: 'EXTCODESIZE' },
+  "3c": { pops: 4, pushes: 0, name: 'EXTCODECOPY' },
+  "3d": { pops: 0, pushes: 1, name: 'RETURNDATASIZE' },
+  "3e": { pops: 3, pushes: 0, name: 'RETURNDATACOPY' },
+  "3f": { pops: 1, pushes: 1, name: 'EXTCODEHASH' },
+  "40": { pops: 1, pushes: 1, name: 'BLOCKHASH' },
+  "41": { pops: 0, pushes: 1, name: 'COINBASE' },
+  "42": { pops: 0, pushes: 1, name: 'TIMESTAMP' },
+  "43": { pops: 0, pushes: 1, name: 'NUMBER' },
+  "44": { pops: 0, pushes: 1, name: 'PREVRANDAO' },
+  "45": { pops: 0, pushes: 1, name: 'GASLIMIT' },
+  "46": { pops: 0, pushes: 1, name: 'CHAINID' },
+  "47": { pops: 0, pushes: 1, name: 'SELFBALANCE' },
+  "48": { pops: 0, pushes: 1, name: 'BASEFEE' },
+  "49": { pops: 1, pushes: 1, name: 'BLOBHASH' },
+  "4a": { pops: 0, pushes: 1, name: 'BLOBBASEFEE' },
+  "50": { pops: 1, pushes: 0, name: 'POP' },
+  "51": { pops: 1, pushes: 1, name: 'MLOAD' },
+  "52": { pops: 2, pushes: 0, name: 'MSTORE' },
+  "53": { pops: 2, pushes: 0, name: 'MSTORE8' },
+  "54": { pops: 1, pushes: 1, name: 'SLOAD' },
+  "55": { pops: 2, pushes: 0, name: 'SSTORE' },
+  "56": { pops: 1, pushes: 0, name: 'JUMP' },
+  "57": { pops: 2, pushes: 0, name: 'JUMPI' },
+  "58": { pops: 0, pushes: 1, name: 'PC' },
+  "59": { pops: 0, pushes: 1, name: 'MSIZE' },
+  "5a": { pops: 0, pushes: 1, name: 'GAS' },
+  "5b": { pops: 0, pushes: 0, name: 'JUMPDEST' },
+  "5c": { pops: 1, pushes: 1, name: 'TLOAD' },
+  "5d": { pops: 2, pushes: 0, name: 'TSTORE' },
+  "5e": { pops: 3, pushes: 0, name: 'MCOPY' },
+  "5f": { pops: 0, pushes: 1, name: 'PUSH0' },
+  "60": { pops: 0, pushes: 1, name: 'PUSH1' },
+  "61": { pops: 0, pushes: 1, name: 'PUSH2' },
+  "62": { pops: 0, pushes: 1, name: 'PUSH3' },
+  "63": { pops: 0, pushes: 1, name: 'PUSH4' },
+  "64": { pops: 0, pushes: 1, name: 'PUSH5' },
+  "65": { pops: 0, pushes: 1, name: 'PUSH6' },
+  "66": { pops: 0, pushes: 1, name: 'PUSH7' },
+  "67": { pops: 0, pushes: 1, name: 'PUSH8' },
+  "68": { pops: 0, pushes: 1, name: 'PUSH9' },
+  "69": { pops: 0, pushes: 1, name: 'PUSH10' },
+  "6a": { pops: 0, pushes: 1, name: 'PUSH11' },
+  "6b": { pops: 0, pushes: 1, name: 'PUSH12' },
+  "6c": { pops: 0, pushes: 1, name: 'PUSH13' },
+  "6d": { pops: 0, pushes: 1, name: 'PUSH14' },
+  "6e": { pops: 0, pushes: 1, name: 'PUSH15' },
+  "6f": { pops: 0, pushes: 1, name: 'PUSH16' },
+  "70": { pops: 0, pushes: 1, name: 'PUSH17' },
+  "71": { pops: 0, pushes: 1, name: 'PUSH18' },
+  "72": { pops: 0, pushes: 1, name: 'PUSH19' },
+  "73": { pops: 0, pushes: 1, name: 'PUSH20' },
+  "74": { pops: 0, pushes: 1, name: 'PUSH21' },
+  "75": { pops: 0, pushes: 1, name: 'PUSH22' },
+  "76": { pops: 0, pushes: 1, name: 'PUSH23' },
+  "77": { pops: 0, pushes: 1, name: 'PUSH24' },
+  "78": { pops: 0, pushes: 1, name: 'PUSH25' },
+  "79": { pops: 0, pushes: 1, name: 'PUSH26' },
+  "7a": { pops: 0, pushes: 1, name: 'PUSH27' },
+  "7b": { pops: 0, pushes: 1, name: 'PUSH28' },
+  "7c": { pops: 0, pushes: 1, name: 'PUSH29' },
+  "7d": { pops: 0, pushes: 1, name: 'PUSH30' },
+  "7e": { pops: 0, pushes: 1, name: 'PUSH31' },
+  "7f": { pops: 0, pushes: 1, name: 'PUSH32' },
+  "80": { pops: 1, pushes: 2, name: 'DUP1' },
+  "81": { pops: 1, pushes: 2, name: 'DUP2' },
+  "82": { pops: 1, pushes: 2, name: 'DUP3' },
+  "83": { pops: 1, pushes: 2, name: 'DUP4' },
+  "84": { pops: 1, pushes: 2, name: 'DUP5' },
+  "85": { pops: 1, pushes: 2, name: 'DUP6' },
+  "86": { pops: 1, pushes: 2, name: 'DUP7' },
+  "87": { pops: 1, pushes: 2, name: 'DUP8' },
+  "88": { pops: 1, pushes: 2, name: 'DUP9' },
+  "89": { pops: 1, pushes: 2, name: 'DUP10' },
+  "8a": { pops: 1, pushes: 2, name: 'DUP11' },
+  "8b": { pops: 1, pushes: 2, name: 'DUP12' },
+  "8c": { pops: 1, pushes: 2, name: 'DUP13' },
+  "8d": { pops: 1, pushes: 2, name: 'DUP14' },
+  "8e": { pops: 1, pushes: 2, name: 'DUP15' },
+  "8f": { pops: 1, pushes: 2, name: 'DUP16' },
+  "90": { pops: 0, pushes: 0, name: 'SWAP1' },
+  "91": { pops: 0, pushes: 0, name: 'SWAP2' },
+  "92": { pops: 0, pushes: 0, name: 'SWAP3' },
+  "93": { pops: 0, pushes: 0, name: 'SWAP4' },
+  "94": { pops: 0, pushes: 0, name: 'SWAP5' },
+  "95": { pops: 0, pushes: 0, name: 'SWAP6' },
+  "96": { pops: 0, pushes: 0, name: 'SWAP7' },
+  "97": { pops: 0, pushes: 0, name: 'SWAP8' },
+  "98": { pops: 0, pushes: 0, name: 'SWAP9' },
+  "99": { pops: 0, pushes: 0, name: 'SWAP10' },
+  "9a": { pops: 0, pushes: 0, name: 'SWAP11' },
+  "9b": { pops: 0, pushes: 0, name: 'SWAP12' },
+  "9c": { pops: 0, pushes: 0, name: 'SWAP13' },
+  "9d": { pops: 0, pushes: 0, name: 'SWAP14' },
+  "9e": { pops: 0, pushes: 0, name: 'SWAP15' },
+  "9f": { pops: 0, pushes: 0, name: 'SWAP16' },
+  "a0": { pops: 2, pushes: 0, name: 'LOG0' },
+  "a1": { pops: 3, pushes: 0, name: 'LOG1' },
+  "a2": { pops: 4, pushes: 0, name: 'LOG2' },
+  "a3": { pops: 5, pushes: 0, name: 'LOG3' },
+  "a4": { pops: 6, pushes: 0, name: 'LOG4' },
+  "f0": { pops: 3, pushes: 1, name: 'CREATE' },
+  "f1": { pops: 7, pushes: 1, name: 'CALL' },
+  "f2": { pops: 7, pushes: 1, name: 'CALLCODE' },
+  "f3": { pops: 2, pushes: 0, name: 'RETURN' },
+  "f4": { pops: 6, pushes: 1, name: 'DELEGATECALL' },
+  "f5": { pops: 4, pushes: 1, name: 'CREATE2' },
+  "fa": { pops: 6, pushes: 1, name: 'STATICCALL' },
+  "fd": { pops: 2, pushes: 0, name: 'REVERT' },
+  "fe": { pops: 0, pushes: 0, name: 'INVALID' },
+  "ff": { pops: 1, pushes: 0, name: 'SELFDESTRUCT' },
+}
