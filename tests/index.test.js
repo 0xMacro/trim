@@ -443,16 +443,19 @@ o.spec('user-defined macros', function () {
     o(compileTrim(source)).equals(compileBasm(expectedBasm))
   })
 
-  o('implicit calls for macros starting with dollar sign', function () {
+  o('implicit calls for macros starting with dollar sign and allcaps', function () {
     const source = `
       (def $foo () 0x07)
       (push $foo)
       (def $$ () 0x09)
       (push $$)
+      (defconst DECIMALS 18)
+      (push DECIMALS)
     `
     const expectedBasm = `
       PUSH1 0x07
       PUSH1 0x09
+      PUSH1 0x12
     `
     o(compileTrim(source)).equals(compileBasm(expectedBasm))
 

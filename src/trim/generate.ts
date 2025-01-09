@@ -129,8 +129,8 @@ function _generateBytecodeAst(exp: SexpNode, ctx: {
   else if (typeof exp !== 'string') {
     return [exp]
   }
-  else if (ctx.macros[exp] && exp[0] === '$') {
-    // Allow bare macro calls, e.g. `(push myMacro)
+  else if (ctx.macros[exp] && (exp[0] === '$' || /^[A-Z]+$/.test(exp))) {
+    // Allow bare macro calls, e.g. `(push $myMacro)` or `(push MY_CONST)`
     return _generateBytecodeAst([exp], ctx)
   }
   else if (exp === '_') {
