@@ -263,6 +263,38 @@ Then, rewrite the previous lookup table to use it:
 
 Macros only rewrite terms, so there is no runtime cost to using a macro vs not using it.
 
+### defconst
+
+The `defconst` macro lets you define compile-time constants that can be interpolated elsewhere in your code.
+
+Basic usage:
+```trim
+; Define a constant
+(defconst DECIMALS 18)
+
+; Use it in expressions
+(MSTORE 0x00 DECIMALS)
+
+; Constants can reference other constants
+(defconst ONE_TOKEN (math 10 ** DECIMALS))
+
+; Constants can use any valid Trim expression
+(defconst OWNER_SLOT (keccak256 "owner.slot"))
+```
+
+Constants are evaluated at compile-time, so there's no runtime overhead. They're especially useful in combination with other macros:
+
+```trim
+; Define some common storage slots
+(defconst OWNER_SLOT 0x00)
+(defconst PAUSED_SLOT 0x01)
+
+; Create a macro to check ownership
+(def require-owner ()
+  (revert "Unauthorized"
+    (ISZERO (EQ (SLOAD OWNER_SLOT) (CALLER)))))
+```
+
 ### defcounter
 
 The `defcounter` macro lets you define compile-time counters that can be incremented and used in expressions. This is useful for generating sequences of numbers or managing predefined memory slots.
@@ -307,6 +339,24 @@ A common use case is managing memory slots ("registers") in a more maintainable 
 ```
 
 Trim evaluates all counter operations during compilation, resulting in fixed values in the final bytecode.
+
+### revert / return
+
+The `revert` and `return` macros are a slightly more convenient ways to exit contract execution, mostly useful for debugging due to their concise syntax.
+
+```trim
+; Implicitly return the top of the stack
+(return)
+
+; Return a specific value (still off the stack, but explicit)
+(return (MLOAD 0x00))
+
+; Simple revert with message
+(revert "Something went wrong")
+
+; Conditional revert - only revert IF the caller is not the owner
+(revert "Unauthorized" (ISZERO (EQ caller owner)))
+```
 
 ## Roadmap
 
