@@ -1,7 +1,19 @@
 #!/usr/bin/env node
 
 import { readFileSync } from 'fs'
-import { compileTrim } from './dist/index.js'
+import { compileTrim, debugDecompileToBasm } from './dist/index.js'
+
+const args = process.argv.slice(2)
+const options = { asm: false }
+
+// Parse options
+const fileArgs = args.filter(arg => {
+  if (arg === '--asm') {
+    options.asm = true
+    return false
+  }
+  return true
+})
 
 // Check if we're receiving data from STDIN
 const isStdin = !process.stdin.isTTY
@@ -20,14 +32,14 @@ if (isStdin) {
   })
 } else {
   // Handle file input
-  const args = process.argv.slice(2)
-  if (args.length === 0) {
-    console.error('Usage: trim <filepath> or pipe content via STDIN')
+
+  if (fileArgs.length === 0) {
+    console.error('Usage: trim [--asm] <filepath> or pipe content via STDIN')
     process.exit(1)
   }
 
   try {
-    go(readFileSync(args[0], 'utf8'))
+    go(readFileSync(fileArgs[0], 'utf8'), options)
   } catch (error) {
     console.error(`Error reading file: ${error.message}`)
     process.exit(1)
@@ -35,5 +47,11 @@ if (isStdin) {
 }
 
 function go(source) {
-  console.log(compileTrim(source))
+  const bytecode = compileTrim(source)
+  if (options.asm) {
+    console.log(debugDecompileToBasm(bytecode).basm)
+  }
+  else {
+    console.log(bytecode)
+  }
 }
