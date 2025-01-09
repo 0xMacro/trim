@@ -25,11 +25,15 @@ o.spec('Static Router', function () {
 
     #runtime
 
+    ;; Helper to copy data from code to memory with the correct memory offset.
+    (def codecopy-word (reg offset length)
+      (CODECOPY (math reg + 1word - length) offset length))
+
     ;;
     ;; Set up registers
     ;;
     (defcounter reg-counter)
-    (def defreg (name) (def name () (math 1word * (reg-counter ++))))
+    (def defreg (name) (defconst name (math 1word * (reg-counter ++))))
 
     ;; Scratch space
     (defreg $$)
@@ -47,20 +51,24 @@ o.spec('Static Router', function () {
     (defreg $bot)
     (defreg $top)
     (defreg $mid)
-    (CODECOPY $top #function-count 2bytes)
+    (codecopy-word $top #function-count 2bytes)
+    (MSTORE $top (SUB (MLOAD $top) 1))
 
+    ;;
+    ;; Main Body
+    ;;
     #search
     JUMPDEST
 
     ;; Load middle of search range - the next function selector to match against.
     (MSTORE
       $mid
-      (DIV (SUB (MLOAD $top) (MLOAD $bot)) 2))
+      (ADD (MLOAD $bot) (DIV (SUB (MLOAD $top) (MLOAD $bot)) 2)))
     (MSTORE
       $current-pos
       (ADD (MUL 5bytes (MLOAD $mid)) #function-data))
 
-    (CODECOPY $current (MLOAD $current-pos) 4bytes)
+    (codecopy-word $current (MLOAD $current-pos) 4bytes)
 
     ;; If we have a match, delegate. Else, continue searching.
     (EQ (MLOAD $input) (MLOAD $current))
@@ -71,11 +79,11 @@ o.spec('Static Router', function () {
     (JUMPI #nomatch _)
 
     ;; If input is below current, search lower half.
-    (LT (MLOAD $input) (MLOAD $mid))
+    (LT (MLOAD $input) (MLOAD $current))
     (JUMPI #search-lower _)
 
     ;; Else, search upper half.
-    (MSTORE $bot (ADD (MLOAD $mid) 4bytes))
+    (MSTORE $bot (ADD 1 (MLOAD $mid)))
     (JUMP #search)
 
     #search-lower
@@ -87,10 +95,10 @@ o.spec('Static Router', function () {
     JUMPDEST
 
     ;; Get module index
-    (CODECOPY $$ (ADD (MLOAD $current-pos) 4bytes) 1byte)
+    (codecopy-word $$ (ADD (MLOAD $current-pos) 4bytes) 1byte)
 
     ;; Load module address
-    (CODECOPY
+    (codecopy-word
       $$
       (ADD (MUL 20bytes (MLOAD $$)) #module-data)
       20bytes)
@@ -106,6 +114,7 @@ o.spec('Static Router', function () {
     (REVERT 0 RETURNDATASIZE)
 
     #delegate-success
+    JUMPDEST
     (RETURN 0 RETURNDATASIZE)
 
     STOP
@@ -157,17 +166,33 @@ o.spec('Static Router', function () {
     const SAMPLE_ADDR = '0x0000111100002222000033330000444400005555'
     const SAMPLE_BYTES32 = '0x' + pad('abcd', 64)
 
+    vm.instance.evm.events.on('step', ({ opcode, stack, depth, memory, address }) => {
+      // console.log(address.toString('hex'), opcode.name)
+      const match = opcode.name.match(/LOG([0-4])/)
+      if (match) {
+        const n = parseInt(match[1])
+        console.log('LOG:', ...stack.slice(-(n + 2)).reverse().slice(2).map(x => '0x'+x.toString(16)))
+      }
+    })
+
     const [alice] = vm.accounts
-    const call = (addr, sig, args=[]) => alice.call(addr, ABI, sig, args).then(r => r.returnValue)
+    const testcall = (sig, args, expected) => alice.call(vm.contractAddr, ABI, sig, args).then(r => {
+      // console.log("hrm", r)
+      if (r.results?.execResult?.exceptionError) {
+        console.log('ERR:', r.results.execResult.exceptionError)
+      }
+      o(r.returnValue).equals(pad(expected.replace(/^0x/, ''), 64))
+      o(r.results.execResult.exceptionError).equals(undefined)
+    })
 
-    o(await call(GREETER_MODULE, 'greet()')).equals(pad('11', 64))
-    o(await call(GREETER_MODULE, 'greet(address)', [SAMPLE_ADDR])).equals(pad('22', 64))
-    o(await call(GREETER_MODULE, 'greetings(address)', [SAMPLE_ADDR])).equals(pad('33', 64))
-    o(await call(GREETER_MODULE, 'setGreeting(string)', ['hello'])).equals(pad('44', 64))
+    await testcall('greet()', [], '0x11')
+    await testcall('greet(address)', [SAMPLE_ADDR], '0x22')
+    await testcall('greetings(address)', [SAMPLE_ADDR], '0x33')
+    await testcall('setGreeting(string)', ['hello'], '0x44')
 
-    o(await call(SAMPLE_MODULE, 'initOrUpgradeNft(bytes32,string,string,string,address)', [SAMPLE_BYTES32, 'a', 'b', 'c', SAMPLE_ADDR])).equals(pad('55', 64))
-    o(await call(SAMPLE_MODULE, 'getAssociatedSystem(bytes32)', [SAMPLE_BYTES32])).equals(pad('66', 64))
-    o(await call(SAMPLE_MODULE, 'initOrUpgradeToken(bytes32,string,string,uint8,address)', [SAMPLE_BYTES32, 'a', 'b', 1, SAMPLE_ADDR])).equals(pad('77', 64))
-    o(await call(SAMPLE_MODULE, 'registerUnmanagedSystem(bytes32,address)', [SAMPLE_BYTES32, SAMPLE_ADDR])).equals(pad('88', 64))
+    await testcall('initOrUpgradeNft(bytes32,string,string,string,address)', [SAMPLE_BYTES32, 'a', 'b', 'c', SAMPLE_ADDR], '0x55')
+    await testcall('getAssociatedSystem(bytes32)', [SAMPLE_BYTES32], '0x66')
+    await testcall('initOrUpgradeToken(bytes32,string,string,uint8,address)', [SAMPLE_BYTES32, 'a', 'b', 1, SAMPLE_ADDR], '0x77')
+    await testcall('registerUnmanagedSystem(bytes32,address)', [SAMPLE_BYTES32, SAMPLE_ADDR], '0x88')
   })
 })

@@ -22,8 +22,10 @@ o.spec('Trim Templates', function () {
     const [alice] = vm.accounts
     const foo = await alice.call(addr, abi, 'foo()', [])
     o(foo.returnValue).equals(pad('a', 64)) // 10 in hex
+    o(foo.results.execResult.exceptionError).equals(undefined)
 
     const bar = await alice.call(addr, abi, 'bar()', [])
     o(bar.returnValue).equals(pad('20', 64))
+    o(bar.results.execResult.exceptionError).equals(undefined)
   })
 })

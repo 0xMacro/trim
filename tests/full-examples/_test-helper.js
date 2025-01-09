@@ -104,6 +104,7 @@ export function makeFullExampleVm({ source }) {
     setup,
     mockContract,
     get accounts() { return accounts },
+    get instance() { return vm },
     get contractAddr() { return contractAddr },
   }
 }
