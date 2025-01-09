@@ -522,15 +522,19 @@ o.spec('user-defined macros', function () {
   o('using a nested def', function () {
     const source = `
       (defcounter reg-counter)
-      (def defreg (name) (def name () (math 1word * (reg-counter ++))))
+      (def defreg (name) (defconst name (math 1word * (reg-counter ++))))
       (defreg $a)
       (defreg $b)
       (MSTORE $a 0xaa)
+      (MSTORE $b 0xbb)
       (MSTORE $b 0xbb)
     `
     const expectedBasm = `
       PUSH1 0xaa
       PUSH1 0x00
+      MSTORE
+      PUSH1 0xbb
+      PUSH1 0x20
       MSTORE
       PUSH1 0xbb
       PUSH1 0x20

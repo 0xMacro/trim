@@ -110,6 +110,14 @@ function _generateBytecodeAst(exp: SexpNode, ctx: {
 
       return []
     }
+    else if (firstNode === 'defconst') {
+      const [name, valueNode] = exp.slice(1)
+      const [value] = _generateBytecodeAst(valueNode, { ...ctx, level: ctx.level + 1 })
+      if (value.type !== 'literal' || value.subtype !== 'hex') {
+        throw new Error(`[trim] const requires a literal value`)
+      }
+      return _generateBytecodeAst(['def', name, [], value], ctx)
+    }
     else {
       function parseSexp(sexp: SexpNode) {
         return _generateBytecodeAst(sexp, { ...ctx, inMacro: true, level: ctx.level + 1 })
