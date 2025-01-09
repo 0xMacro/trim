@@ -1,5 +1,5 @@
 
-export function stubbedContract(stubs: { [functionSig: string]: string }): string {
+export function makeStubbedContract(stubs: { [functionSig: string]: string }): string {
   const labels = new Map(Object.keys(stubs).map(sig => [sig, '#' + sig.replace(/[()]/g, '__').replace(/,/g, '_')]))
   return `
     #runtime

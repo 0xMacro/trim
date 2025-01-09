@@ -1,6 +1,6 @@
 import { compileTrim } from '../../dist/trim/index.js'
 import { getOpcodesForTrim } from '../../dist/interop.js'
-import { stubbedContract } from '../../dist/templates.js'
+import { makeStubbedContract } from '../../dist/templates/stubbed-contract.js'
 
 import { defaultAbiCoder as AbiCoder, Interface } from '@ethersproject/abi'
 import { EVM, getOpcodesForHF } from '@ethereumjs/evm'
@@ -96,7 +96,7 @@ export function makeFullExampleVm({ source }) {
   }
 
   async function mockContract(address, stubs) {
-    const source = stubbedContract(stubs)
+    const source = makeStubbedContract(stubs)
     await injectCode(address, compileTrim(source, { opcodes }))
   }
 

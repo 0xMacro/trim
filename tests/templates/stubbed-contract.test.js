@@ -1,17 +1,17 @@
 import o from 'ospec'
 import { pad } from '../../dist/util.js'
 
-import { makeFullExampleVm } from './_test-helper.js'
+import { makeFullExampleVm } from '../full-examples/_test-helper.js'
 import { Interface } from '@ethersproject/abi'
 
-o.spec('Trim Templates', function () {
+o.spec('Stubbed Contract Template', function () {
   const vm = makeFullExampleVm({ source: '', sourceAbi: [] })
 
   o.beforeEach(async () => {
     await vm.setup()
   })
 
-  o('stubbedContract', async () => {
+  o('hardcodes return values', async () => {
     const abi = new Interface([
       'function foo()',
       'function bar()',

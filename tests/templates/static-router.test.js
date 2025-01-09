@@ -1,7 +1,7 @@
 import o from 'ospec'
 import { pad } from '../../dist/util.js'
 
-import { makeFullExampleVm } from './_test-helper.js'
+import { makeFullExampleVm } from '../full-examples/_test-helper.js'
 import { Interface } from '@ethersproject/abi'
 
 const ABI = new Interface([
