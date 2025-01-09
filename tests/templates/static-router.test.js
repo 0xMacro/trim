@@ -1,148 +1,30 @@
 import o from 'ospec'
 import { pad } from '../../dist/util.js'
+import { makeStaticRouter } from '../../dist/templates/static-router.js'
 
 import { makeFullExampleVm } from '../full-examples/_test-helper.js'
 import { Interface } from '@ethersproject/abi'
+import GreeterModuleABI from '../fixtures/GreeterModuleABI.json' with {type: "json"}
+import SampleModuleABI from '../fixtures/SampleModuleABI.json' with {type: "json"}
 
 const ABI = new Interface([
-  'function greetings(address)',
-  'function initOrUpgradeNft(bytes32,string,string,string,address)',
-  'function getAssociatedSystem(bytes32)',
-  'function setGreeting(string)',
-  'function greet(address)',
-  'function initOrUpgradeToken(bytes32,string,string,uint8,address)',
-  'function greet()',
-  'function registerUnmanagedSystem(bytes32,address)',
+  ...GreeterModuleABI.filter(x => x.type === 'function'),
+  ...SampleModuleABI.filter(x => x.type === 'function'),
 ])
-
 
 o.spec('Static Router', function () {
   const GREETER_MODULE = '0x703aef879107aDE9820A795d3a6C36d6B9CC2B97'
   const SAMPLE_MODULE = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'
 
-  const source = `
-    (init-runtime-code)
-
-    #runtime
-
-    ;; Helper to copy data from code to memory with the correct memory offset.
-    (def codecopy-word (reg offset length)
-      (CODECOPY (math reg + 1word - length) offset length))
-
-    ;;
-    ;; Set up registers
-    ;;
-    (defcounter reg-counter)
-    (def defreg (name) (defconst name (math 1word * (reg-counter ++))))
-
-    ;; Scratch space
-    (defreg $$)
-
-    ;; Incoming function selector
-    (defreg $input)
-    (defreg $current)
-    (defreg $current-pos)
-    (CALLDATACOPY (math $input + 1word - 4bytes) 0 4bytes)
-
-    ;; Found module contract address, if any
-    (defreg $module)
-
-    ;; Binary search boundaries
-    (defreg $bot)
-    (defreg $top)
-    (defreg $mid)
-    (codecopy-word $top #function-count 2bytes)
-    (MSTORE $top (SUB (MLOAD $top) 1))
-
-    ;;
-    ;; Main Body
-    ;;
-    #search
-    JUMPDEST
-
-    ;; Load middle of search range - the next function selector to match against.
-    (MSTORE
-      $mid
-      (ADD (MLOAD $bot) (DIV (SUB (MLOAD $top) (MLOAD $bot)) 2)))
-    (MSTORE
-      $current-pos
-      (ADD (MUL 5bytes (MLOAD $mid)) #function-data))
-
-    (codecopy-word $current (MLOAD $current-pos) 4bytes)
-
-    ;; If we have a match, delegate. Else, continue searching.
-    (EQ (MLOAD $input) (MLOAD $current))
-    (JUMPI #delegate _)
-
-    ;; Base case: no more functions to search.
-    (EQ (MLOAD $bot) (MLOAD $top))
-    (JUMPI #nomatch _)
-
-    ;; If input is below current, search lower half.
-    (LT (MLOAD $input) (MLOAD $current))
-    (JUMPI #search-lower _)
-
-    ;; Else, search upper half.
-    (MSTORE $bot (ADD 1 (MLOAD $mid)))
-    (JUMP #search)
-
-    #search-lower
-    JUMPDEST
-    (MSTORE $top (MLOAD $mid))
-    (JUMP #search)
-
-    #delegate
-    JUMPDEST
-
-    ;; Get module index
-    (codecopy-word $$ (ADD (MLOAD $current-pos) 4bytes) 1byte)
-
-    ;; Load module address
-    (codecopy-word
-      $$
-      (ADD (MUL 20bytes (MLOAD $$)) #module-data)
-      20bytes)
-
-    ;; Delegate
-    (MLOAD $$) ; Next lines thrash memory, so load module address onto stack first.
-
-    (CALLDATACOPY 0 0 CALLDATASIZE)
-    (DELEGATECALL GAS _ 0 CALLDATASIZE 0 0)
-    (RETURNDATACOPY 0 0 RETURNDATASIZE)
-
-    (JUMPI #delegate-success _)
-    (REVERT 0 RETURNDATASIZE)
-
-    #delegate-success
-    JUMPDEST
-    (RETURN 0 RETURNDATASIZE)
-
-    STOP
-
-    #nomatch
-    JUMPDEST
-    REVERT ; No matching function selector
-
-    #function-count
-    0x0008
-
-    #function-data
-    0x26ffaa03 0x00 ; GreeterModule.greetings(address)
-    0x2d22bef9 0x01 ; SampleModule.initOrUpgradeNft(bytes32,string,string,string,address)
-    0x60988e09 0x01 ; SampleModule.getAssociatedSystem(bytes32)
-    0xa4136862 0x00 ; GreeterModule.setGreeting()
-    0xad55cd0a 0x00 ; GreeterModule.greet(address)
-    0xc6f79537 0x01 ; SampleModule.initOrUpgradeToken(bytes32,string,string,uint8,address)
-    0xcfae3217 0x00 ; GreeterModule.greet()
-    0xd245d983 0x01 ; SampleModule.registerUnmanagedSystem(bytes32,address)
-
-    #module-count
-    0x02
-
-    #module-data
-    ${GREETER_MODULE} ; GreeterModule
-    ${SAMPLE_MODULE} ; SampleModule
-  `
+  const source = makeStaticRouter([{
+    name: 'GreeterModule',
+    address: GREETER_MODULE,
+    abi: GreeterModuleABI,
+  }, {
+    name: 'SampleModule',
+    address: SAMPLE_MODULE,
+    abi: SampleModuleABI,
+  }])
 
   const vm = makeFullExampleVm({ source, sourceAbi: ABI })
 

@@ -40,3 +40,31 @@ export type MacroCtx = {
   level: number
   parseSexp: (sexp: SexpNode) => BytecodeAstNode[]
 }
+
+//
+// ABI types
+// Pulled from @ethersproject/abi
+//
+export interface AbiJsonFragmentType {
+  readonly name?: string
+  readonly indexed?: boolean
+  readonly type?: string
+  readonly internalType?: any // @TODO: in v6 reduce type
+  readonly components?: ReadonlyArray<AbiJsonFragmentType>
+}
+
+export interface AbiJsonFragment {
+  readonly name?: string
+  readonly type?: string
+
+  readonly anonymous?: boolean
+
+  readonly payable?: boolean
+  readonly constant?: boolean
+  readonly stateMutability?: string
+
+  readonly inputs?: ReadonlyArray<AbiJsonFragmentType>
+  readonly outputs?: ReadonlyArray<AbiJsonFragmentType>
+
+  readonly gas?: string
+}
