@@ -46,19 +46,17 @@ export function makeStaticRouter(modules: StaticRouterModules): string {
 
     ;; Incoming function selector
     (defreg $input)
-    (defreg $current)
-    (defreg $current-pos)
     (CALLDATACOPY (math $input + 1word - 4bytes) 0 4bytes)
 
-    ;; Found module contract address, if any
-    (defreg $module)
-
-    ;; Binary search boundaries
+    ;; Binary search data
     (defreg $bot)
     (defreg $top)
     (defreg $mid)
     (codecopy-word $top #function-count 2bytes)
     (MSTORE $top (SUB (MLOAD $top) 1))
+
+    (defreg $current)
+    (defreg $current-pos)
 
     ;;
     ;; Main Body
