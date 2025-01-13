@@ -18,6 +18,7 @@ Trim is a opcode-oriented programming language for the Ethereum Virtual Machine 
 - [Try it in your browser!](https://0xmacro.com/library/trim/repl)
 - [See the ETH Global Talk](https://www.youtube.com/watch?v=J15hxPRflUg)
 - [Read the slides](./trim-eth-global-2021.pdf)
+- [Install the VS Code Extension](https://marketplace.visualstudio.com/items?itemName=0xMacro.trim-evm)
 
 ## Getting Started
 
