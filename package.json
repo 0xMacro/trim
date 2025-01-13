@@ -23,7 +23,7 @@
   },
   "license": "ISC",
   "dependencies": {
-    "@ethersproject/keccak256": "^5.4.0"
+    "@ethersproject/keccak256": ">= 5.0.0"
   },
   "devDependencies": {
     "@ethereumjs/evm": "^3.1.1",
