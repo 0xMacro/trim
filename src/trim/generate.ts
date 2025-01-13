@@ -1,4 +1,4 @@
-import { BytecodeAstNode, MacroDefs, OpcodeDef, OpcodeMeta, OpcodesByAsm, SexpNode, ToplevelSexp } from "../types"
+import { BytecodeAstNode, GenerateFeatures, MacroDefs, OpcodeDef, OpcodeMeta, OpcodesByAsm, SexpNode, ToplevelSexp } from "../types"
 import { prop, Prop, pad, getBackwardsFriendlyOpcodesByAsm, decToHex } from "../util.js"
 import { defineMacro } from "./macros.js"
 
@@ -171,8 +171,9 @@ type GenerateBytecodeOptions = {
   macros: MacroDefs
   opcodes: OpcodeDef[]
   opcodesMetadata: Record<string, OpcodeMeta>
+  features: GenerateFeatures
 }
-export function generateBytecode(ast: BytecodeAstNode[], { opcodes, macros, opcodesMetadata }: GenerateBytecodeOptions): string[] {
+export function generateBytecode(ast: BytecodeAstNode[], { opcodes, macros, opcodesMetadata, features }: GenerateBytecodeOptions): string[] {
   const pc = prop(0)
   const inc = (byteCount: number) => pc(pc() + byteCount)
   const labels = {} as Record<string, number>
@@ -204,6 +205,7 @@ export function generateBytecode(ast: BytecodeAstNode[], { opcodes, macros, opco
         macros,
         seenTop: () => false,
         level: 0,
+        features,
         opcodesByAsm,
         registerLabel,
         opcodesMetadata,
@@ -218,6 +220,7 @@ export function generateBytecode(ast: BytecodeAstNode[], { opcodes, macros, opco
         macros,
         seenTop,
         level: 0,
+        features,
         opcodesByAsm,
         registerLabel,
         opcodesMetadata,
@@ -258,6 +261,7 @@ function _generateBytecode(ast: BytecodeAstNode[], ctx: {
   opcodesByAsm: OpcodesByAsm
   registerLabel: (name: string) => (() => string)
   opcodesMetadata: Record<string, OpcodeMeta>
+  features: GenerateFeatures
 }): (string | (() => string))[] {
   return ast.slice().reverse().flatMap((node, i, exp) => {
     if (node.type === 'top' && ctx.seenTop()) {
@@ -287,6 +291,10 @@ function _generateBytecode(ast: BytecodeAstNode[], ctx: {
     }
     else if (node.type === 'literal' && node.subtype === 'string') {
       const pushBytes = Buffer.from(node.value).toString('hex')
+      if (/^0+$/.test(pushBytes) && ctx.features.push0) {
+        ctx.inc(1)
+        return [ctx.opcodesByAsm.PUSH0.hex]
+      }
       ctx.inc(1 + pushBytes.length / 2)
       return [
         ctx.opcodesByAsm['PUSH' + pushBytes.length / 2].hex,
@@ -294,6 +302,10 @@ function _generateBytecode(ast: BytecodeAstNode[], ctx: {
       ]
     }
     else if (node.type === 'literal' && node.subtype === 'hex') {
+      if (/^0+$/.test(node.value) && ctx.features.push0) {
+        ctx.inc(1)
+        return [ctx.opcodesByAsm.PUSH0.hex]
+      }
       ctx.inc(1 + node.value.length / 2)
       return [
         ctx.opcodesByAsm['PUSH' + node.value.length / 2].hex,

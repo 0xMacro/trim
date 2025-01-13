@@ -41,6 +41,11 @@ export type MacroCtx = {
   parseSexp: (sexp: SexpNode) => BytecodeAstNode[]
 }
 
+export type GenerateFeatures = {
+  /** Unless false, generates PUSH0 instead of PUSH1 0x00 */
+  push0?: boolean
+}
+
 //
 // ABI types
 // Pulled from @ethersproject/abi

@@ -32,7 +32,7 @@ o.spec('trim compile', function() {
     const expectedBasm = `
       PUSH1 0x01
       PUSH1 0x03
-      PUSH1 0x00
+      PUSH0
       CALLDATALOAD
       ADD
       PUSH1 0x40
@@ -219,35 +219,35 @@ o.spec('trim compile', function() {
     `
     const expectedBasm = `
       PUSH12 0x48656c6c6f2c205472696d21
-      PUSH1 0x00
+      PUSH0
       SSTORE
-      PUSH2 0x0020
+      PUSH2 0x001d
       CODESIZE
       SUB
       DUP1
-      PUSH2 0x0020
-      PUSH1 0x00
+      PUSH2 0x001d
+      PUSH0
       CODECOPY
-      PUSH1 0x00
+      PUSH0
       RETURN
       STOP
       PUSH1 0x04
-      PUSH1 0x00
+      PUSH0
       PUSH1 0x1c
       CALLDATACOPY
-      PUSH1 0x00
+      PUSH0
       MLOAD
       DUP1
       PUSH4 0xcfae3217
       EQ
-      PUSH2 0x001f
+      PUSH2 0x001b
       JUMPI
       PUSH4 0xa4136862
-      PUSH1 0x00
-      PUSH1 0x00
+      PUSH0
+      PUSH0
       REVERT
       JUMPDEST
-      PUSH1 0x00
+      PUSH0
       SLOAD
       PUSH1 0x40
       MSTORE
@@ -388,8 +388,8 @@ o.spec('macros', function () {
       (push (math ($a += 3) + (c ++)))
     `
     const expectedBasm = `
-      PUSH1 0x00
-      PUSH1 0x00
+      PUSH0
+      PUSH0
       PUSH1 0x0a
       PUSH1 0x0b
       PUSH1 0xcb
@@ -534,7 +534,7 @@ o.spec('user-defined macros', function () {
     `
     const expectedBasm = `
       PUSH1 0xaa
-      PUSH1 0x00
+      PUSH0
       MSTORE
       PUSH1 0xbb
       PUSH1 0x20
