@@ -4,12 +4,16 @@ import { readFileSync } from 'fs'
 import { trim, debugDecompileToBasm } from './dist/index.js'
 
 const args = process.argv.slice(2)
-const options = { asm: false }
+const options = { asm: false, decompile: false }
 
 // Parse options
 const fileArgs = args.filter(arg => {
   if (arg === '--asm') {
     options.asm = true
+    return false
+  }
+  if (arg === '--decompile') {
+    options.decompile = true
     return false
   }
   return true
@@ -34,7 +38,7 @@ if (isStdin) {
   // Handle file input
 
   if (fileArgs.length === 0) {
-    console.error('Usage: trim [--asm] <filepath> or pipe content via STDIN')
+    console.error('Usage: trim [--asm] [--decompile] <filepath> or pipe content via STDIN')
     process.exit(1)
   }
 
@@ -47,11 +51,15 @@ if (isStdin) {
 }
 
 function go(source) {
-  const bytecode = trim.compile(source)
-  if (options.asm) {
-    console.log(debugDecompileToBasm(bytecode).basm)
-  }
-  else {
-    console.log(bytecode)
+  if (options.decompile) {
+    console.log(debugDecompileToBasm(source).basm)
+  } else {
+    const bytecode = trim.compile(source)
+    if (options.asm) {
+      console.log(debugDecompileToBasm(bytecode).basm)
+    }
+    else {
+      console.log(bytecode)
+    }
   }
 }
