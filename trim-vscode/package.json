@@ -1,0 +1,45 @@
+{
+  "name": "trim-evm",
+  "displayName": "Trim EVM",
+  "description": "Syntax highlighting for Trim (.trim) files",
+  "version": "0.11.0",
+  "publisher": "0xMacro",
+  "icon": "icon.png",
+  "repository": {
+    "type": "github",
+    "url": "https://github.com/0xMacro/trim"
+  },
+  "engines": {
+    "vscode": "^1.0.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "trim",
+        "aliases": ["Trim", "trim"],
+        "extensions": [".trim"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "trim",
+        "scopeName": "source.trim",
+        "path": "./syntaxes/trim.tmLanguage.json"
+      },
+      {
+        "scopeName": "source.trim.injection",
+        "path": "./syntaxes/js-ts-trim-injection.json",
+        "injectTo": [
+          "source.js",
+          "source.jsx",
+          "source.ts",
+          "source.tsx"
+        ]
+      }
+    ]
+  }
+}

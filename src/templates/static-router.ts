@@ -1,6 +1,7 @@
 import { keccak256 } from "@ethersproject/keccak256"
 import { AbiJsonFragment } from "../types.js"
 import { pad } from "../util.js"
+import { trim } from "../index.js"
 
 export type StaticRouterModules = {
   name: string
@@ -26,7 +27,7 @@ export function makeStaticRouter(modules: StaticRouterModules): string {
   )
   fns.sort((a, b) => a.sig.localeCompare(b.sig))
 
-  return `
+  return trim.source`
     (init-runtime-code)
 
     #runtime

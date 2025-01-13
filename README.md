@@ -40,11 +40,22 @@ Then use the binary...
 ...or import and compile:
 
 ```js
-import { compileTrim } from 'trim-evm'
+import { trim } from 'trim-evm'
 
-const bytecode = compileTrim('(ADD 0x00 0x01)')
+const bytecode = trim`(ADD 0x00 0x01)`
 
 console.log("Compile success! Resulting bytecode:", bytecode)
+```
+
+If you need to configure opcodes:
+
+```js
+import { trim } from 'trim-evm'
+
+const bytecode = trim.compile(trim.source`(ADD 0x00 0x01)`, {
+  opcodes: ...,
+  opcodesMetadata: ...,
+})
 ```
 
 ## Sample

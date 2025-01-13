@@ -1,0 +1,69 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vscode/master/extensions/theme-seti/syntaxes/._schema.json",
+  "name": "Trim",
+  "scopeName": "source.trim",
+  "patterns": [
+    {
+      "name": "keyword.control.trim",
+      "match": "(?<=\\()[ \\t]*\\b(#runtime|def|defconst|defcounter|push|math|abi/fn-selector|init-runtime-code|revert|return)\\b"
+    },
+
+    {
+      "name": "constant.language.trim",
+      "match": "\\b(?:0x[0-9a-fA-F]+|[0-9]+(?:words?|bytes?)?)\\b"
+    },
+
+    {
+      "name": "support.function.opcode.trim",
+      "match": "\\b(?:ADD|ADDMOD|ADDRESS|AND|BALANCE|BASEFEE|BLOBBASEFEE|BLOBHASH|BLOCKHASH|BYTE|CALL|CALLCODE|CALLDATACOPY|CALLDATALOAD|CALLDATASIZE|CALLER|CALLVALUE|CHAINID|CODECOPY|CODESIZE|COINBASE|CREATE|CREATE2|DELEGATECALL|DIV|DUP(?:[0-9]|1[0-6])|EQ|EXP|EXTCODECOPY|EXTCODEHASH|EXTCODESIZE|GAS|GASLIMIT|GASPRICE|GT|INVALID|ISZERO|JUMP|JUMPDEST|JUMPI|KECCAK256|LOG[0-4]|LT|MCOPY|MLOAD|MOD|MSIZE|MSTORE|MSTORE8|MUL|MULMOD|NOT|NUMBER|OR|ORIGIN|PC|POP|PREVRANDAO|PUSH(?:[0-9]|[1-2][0-9]|3[0-2])|RETURN|RETURNDATACOPY|RETURNDATASIZE|REVERT|SAR|SDIV|SELFBALANCE|SELFDESTRUCT|SGT|SHA3|SHL|SHR|SIGNEXTEND|SLOAD|SLT|SMOD|SSTORE|STATICCALL|STOP|SUB|SWAP(?:[0-9]|1[0-6])|TIMESTAMP|TLOAD|TSTORE|XOR)\\b"
+    },
+
+    {
+      "name": "comment.line.semicolon.trim",
+      "begin": ";",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.comment.trim"
+        }
+      },
+      "end": "$",
+      "patterns": [
+        {
+          "match": ".",
+          "name": "comment.line.trim"
+        }
+      ]
+    },
+    {
+      "name": "string.quoted.double.trim",
+      "begin": "\"",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.begin.trim"
+        }
+      },
+      "end": "\"",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.end.trim"
+        }
+      },
+      "patterns": [
+        {
+          "match": "\\\\.",
+          "name": "constant.character.escape.trim"
+        }
+      ]
+    },
+    {
+      "name": "entity.name.tag.trim",
+      "match": "#[A-Za-z0-9_-]+"
+    },
+    {
+      "name": "meta.interpolation.trim",
+      "begin": "\\$\\{",
+      "end": "\\}",
+      "patterns": []
+    }
+  ]
+}
