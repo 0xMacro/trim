@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { readFileSync } from 'fs'
-import { compileTrim, debugDecompileToBasm } from './dist/index.js'
+import { trim, debugDecompileToBasm } from './dist/index.js'
 
 const args = process.argv.slice(2)
 const options = { asm: false }
@@ -47,7 +47,7 @@ if (isStdin) {
 }
 
 function go(source) {
-  const bytecode = compileTrim(source)
+  const bytecode = trim.compile(source)
   if (options.asm) {
     console.log(debugDecompileToBasm(bytecode).basm)
   }
