@@ -4,10 +4,14 @@ import { readFileSync } from 'fs'
 import { trim, debugDecompileToBasm } from './dist/index.js'
 
 const args = process.argv.slice(2)
-const options = { asm: false, decompile: false }
+const options = { asm: false, decompile: false, version: false }
 
 // Parse options
 const fileArgs = args.filter(arg => {
+  if (arg === '--version') {
+    options.version = true
+    return false
+  }
   if (arg === '--asm') {
     options.asm = true
     return false
@@ -22,7 +26,12 @@ const fileArgs = args.filter(arg => {
 // Check if we're receiving data from STDIN
 const isStdin = !process.stdin.isTTY
 
-if (isStdin) {
+if (options.version) {
+  const pkg = readFileSync('package.json', 'utf8')
+  console.log(JSON.parse(pkg).version)
+  process.exit(0)
+}
+else if (isStdin) {
   let data = ''
 
   process.stdin.setEncoding('utf8')
