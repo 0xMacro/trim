@@ -2,7 +2,7 @@ import { compileTrim } from '../../dist/trim/index.js'
 import { getOpcodesForTrim } from '../../dist/interop.js'
 import { makeStubbedContract } from '../../dist/templates/stubbed-contract.js'
 
-import { defaultAbiCoder as AbiCoder, Interface } from '@ethersproject/abi'
+import { encodeFunctionData } from 'viem'
 import { EVM, getOpcodesForHF } from '@ethereumjs/evm'
 import { VM } from '@ethereumjs/vm'
 import { Common, Chain, Hardfork } from '@ethereumjs/common'
@@ -37,8 +37,7 @@ export function makeFullExampleVm({ source }) {
   //
   // Helpers
   //
-  async function call(accountIndex, contractAddr, abi, funcName, args) {
-    const calldata = abi.getSighash(funcName) + AbiCoder.encode(abi.functions[funcName].inputs, args).slice(2)
+  async function call(accountIndex, contractAddr, calldata) {
     return await runTx(accountIndex, {
       to: contractAddr,
       gasPrice: "0x09184e72a000",

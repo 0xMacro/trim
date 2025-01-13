@@ -3,14 +3,14 @@ import { pad } from '../../dist/util.js'
 import { makeStaticRouter } from '../../dist/templates/static-router.js'
 
 import { makeFullExampleVm } from '../full-examples/_test-helper.js'
-import { Interface } from '@ethersproject/abi'
+import { encodeFunctionData } from 'viem'
 import GreeterModuleABI from '../fixtures/GreeterModuleABI.json' with {type: "json"}
 import SampleModuleABI from '../fixtures/SampleModuleABI.json' with {type: "json"}
 
-const ABI = new Interface([
+const ABI = [
   ...GreeterModuleABI.filter(x => x.type === 'function'),
   ...SampleModuleABI.filter(x => x.type === 'function'),
-])
+]
 
 o.spec('Static Router', function () {
   const GREETER_MODULE = '0x703aef879107aDE9820A795d3a6C36d6B9CC2B97'
@@ -58,7 +58,11 @@ o.spec('Static Router', function () {
     })
 
     const [alice] = vm.accounts
-    const testcall = (sig, args, expected) => alice.call(vm.contractAddr, ABI, sig, args).then(r => {
+    const testcall = (sig, args, expected) => alice.call(vm.contractAddr, encodeFunctionData({
+      abi: ABI,
+      functionName: sig,
+      args,
+    })).then(r => {
       // console.log("hrm", r)
       if (r.results?.execResult?.exceptionError) {
         console.log('ERR:', r.results.execResult.exceptionError)
@@ -67,14 +71,14 @@ o.spec('Static Router', function () {
       o(r.results.execResult.exceptionError).equals(undefined)
     })
 
-    await testcall('greet()', [], '0x11')
-    await testcall('greet(address)', [SAMPLE_ADDR], '0x22')
-    await testcall('greetings(address)', [SAMPLE_ADDR], '0x33')
-    await testcall('setGreeting(string)', ['hello'], '0x44')
+    await testcall('greet', [], '0x11')
+    await testcall('greet', [SAMPLE_ADDR], '0x22')
+    await testcall('greetings', [SAMPLE_ADDR], '0x33')
+    await testcall('setGreeting', ['hello'], '0x44')
 
-    await testcall('initOrUpgradeNft(bytes32,string,string,string,address)', [SAMPLE_BYTES32, 'a', 'b', 'c', SAMPLE_ADDR], '0x55')
-    await testcall('getAssociatedSystem(bytes32)', [SAMPLE_BYTES32], '0x66')
-    await testcall('initOrUpgradeToken(bytes32,string,string,uint8,address)', [SAMPLE_BYTES32, 'a', 'b', 1, SAMPLE_ADDR], '0x77')
-    await testcall('registerUnmanagedSystem(bytes32,address)', [SAMPLE_BYTES32, SAMPLE_ADDR], '0x88')
+    await testcall('initOrUpgradeNft', [SAMPLE_BYTES32, 'a', 'b', 'c', SAMPLE_ADDR], '0x55')
+    await testcall('getAssociatedSystem', [SAMPLE_BYTES32], '0x66')
+    await testcall('initOrUpgradeToken', [SAMPLE_BYTES32, 'a', 'b', 1, SAMPLE_ADDR], '0x77')
+    await testcall('registerUnmanagedSystem', [SAMPLE_BYTES32, SAMPLE_ADDR], '0x88')
   })
 })

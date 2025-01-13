@@ -1,71 +1,9 @@
 import o from 'ospec'
 import { pad } from '../../dist/util.js'
 
+import { encodeFunctionData } from 'viem'
+import ERC20ABI from '../fixtures/ERC20ABI.json' with {type: "json"}
 import { makeFullExampleVm } from './_test-helper.js'
-import { Interface } from '@ethersproject/abi'
-
-const ERC20_ABI = new Interface([
-  'function name()', // string
-  'function symbol()', // string
-  'function decimals()', // uint8
-  'function totalSupply()', // uint256
-
-  'function approve(address, uint256)', // bool
-  'function balanceOf(address)', // uint256
-
-  'function transfer(address, uint256)', // bool
-  'function transferFrom(address, address, uint256)', // bool
-  'function allowance(address, address)', // uint256
-  // {
-  //   "payable": true,
-  //   "stateMutability": "payable",
-  //   "type": "fallback"
-  // },
-  // {
-  //   "anonymous": false,
-  //   "inputs": [
-  //     {
-  //       "indexed": true,
-  //       "name": "owner",
-  //       "type": "address"
-  //     },
-  //     {
-  //       "indexed": true,
-  //       "name": "spender",
-  //       "type": "address"
-  //     },
-  //     {
-  //       "indexed": false,
-  //       "name": "value",
-  //       "type": "uint256"
-  //     }
-  //   ],
-  //   "name": "Approval",
-  //   "type": "event"
-  // },
-  // {
-  //   "anonymous": false,
-  //   "inputs": [
-  //     {
-  //       "indexed": true,
-  //       "name": "from",
-  //       "type": "address"
-  //     },
-  //     {
-  //       "indexed": true,
-  //       "name": "to",
-  //       "type": "address"
-  //     },
-  //     {
-  //       "indexed": false,
-  //       "name": "value",
-  //       "type": "uint256"
-  //     }
-  //   ],
-  //   "name": "Transfer",
-  //   "type": "event"
-  // }
-])
 
 
 o.spec('ERC-20', function () {
@@ -111,7 +49,11 @@ o.spec('ERC-20', function () {
 
   o('balanceOf', async () => {
     const [alice] = vm.accounts
-    const {results, returnValue} = await alice.call(vm.contractAddr, ERC20_ABI, 'balanceOf(address)', [alice.address])
+    const {results, returnValue} = await alice.call(vm.contractAddr, encodeFunctionData({
+      abi: ERC20ABI,
+      functionName: 'balanceOf',
+      args: [alice.address]
+    }))
     o(returnValue).equals(pad('22b', 64)) // 555 in hex
   })
 })

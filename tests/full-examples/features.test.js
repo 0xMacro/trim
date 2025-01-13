@@ -2,12 +2,17 @@ import o from 'ospec'
 import { pad } from '../../dist/util.js'
 
 import { makeFullExampleVm } from './_test-helper.js'
-import { Interface } from '@ethersproject/abi'
+import { encodeFunctionData } from 'viem'
 
 o.spec('Trim Features', function () {
 
   o('advanced top', async () => {
-    const abi = new Interface(['function foo()'])
+    const abi = [{
+      type: 'function',
+      name: 'foo',
+      inputs: [],
+      outputs: []
+    }]
     const source = `
       (init-runtime-code)
       #runtime
@@ -19,7 +24,11 @@ o.spec('Trim Features', function () {
     await vm.setup()
 
     const [alice] = vm.accounts
-    const foo = await alice.call(vm.contractAddr, abi, 'foo()', [])
+    const foo = await alice.call(vm.contractAddr, encodeFunctionData({
+      abi,
+      functionName: 'foo',
+      args: []
+    }))
     o(foo.returnValue).equals(pad('10', 64))
     o(foo.results.execResult.exceptionError).equals(undefined)
   })
