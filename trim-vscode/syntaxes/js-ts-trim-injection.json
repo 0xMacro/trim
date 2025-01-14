@@ -2,7 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/microsoft/vscode/master/extensions/theme-seti/syntaxes/._schema.json",
   "name": "JavaScript/TypeScript Trim Injection",
   "scopeName": "source.trim.injection",
-  "injectionSelector": "L:source.js, L:source.jsx, L:source.ts, L:source.tsx",
+  "injectionSelector": "L:source.js, L:source.jsx, L:source.ts, L:source.tsx, L:text.html.markdown",
   "patterns": [
     {
       "begin": "(\\btrim(\\.source)?)\\s*(`)",
@@ -20,6 +20,15 @@
           "name": "punctuation.definition.template-expression.end.js"
         }
       },
+      "patterns": [
+        {
+          "include": "source.trim"
+        }
+      ]
+    },
+    {
+      "begin": "^```trim$",
+      "end": "^```$",
       "patterns": [
         {
           "include": "source.trim"
