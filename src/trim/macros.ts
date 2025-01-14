@@ -1,5 +1,6 @@
 import { BytecodeAstNode, MacroDefs, MacroFn, SexpNode } from "../types";
 import { keccak256 } from '@ethersproject/keccak256'
+import { createContext, runInNewContext } from 'vm';
 import { autoPad, decToHex } from "../util.js";
 
 export const standardMacros: MacroDefs = {
@@ -23,7 +24,14 @@ export const standardMacros: MacroDefs = {
       return parseInt(result.value, 16)
     })
 
-    const result = eval(validTerms.join(' '))
+    const mathExpression = validTerms.join(' ');
+
+    // Sandbox
+    const context = createContext({});
+    const result = runInNewContext(mathExpression, context, {
+      timeout: 100,
+      displayErrors: true
+    });
 
     if (typeof result !== 'number') {
       // TODO: Better error message (need reverse parser)
