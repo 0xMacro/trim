@@ -2,7 +2,7 @@
   "name": "trim-evm",
   "displayName": "Trim EVM",
   "description": "Syntax highlighting for trim`...` blocks in JS/TS",
-  "version": "0.13.1",
+  "version": "0.13.2",
   "publisher": "0xMacro",
   "icon": "icon.png",
   "repository": {
