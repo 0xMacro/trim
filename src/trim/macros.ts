@@ -8,43 +8,15 @@ export const standardMacros: MacroDefs = {
     return [{ type: 'exp', nodes: this.parseSexp(val) }]
   },
 
-  math(...vals) {
-    const validTerms: (string | number)[] = vals.map(term => {
-      // Check for math specific terms first since these are not normally valid tokens
-      if (typeof term === 'string' && /^(\+|-|\*|\/)/.test(term)) {
-        return term
-      }
-
-      // Otherwise, resolve Trim terms as usual
-      const [result] = this.parseSexp(term)
-      if (result.type !== 'literal' || result.subtype !== 'hex') {
-        // TODO: Better error message (need reverse parser)
-        throw new Error(`[trim] Invalid math term: '${'name' in result ? result.name : JSON.stringify(result)}'`)
-      }
-      return parseInt(result.value, 16)
-    })
-
-    const mathExpression = validTerms.join(' ');
-
-    // Sandbox
-    const context = createContext({});
-    const result = runInNewContext(mathExpression, context, {
-      timeout: 100,
-      displayErrors: true
-    });
-
-    if (typeof result !== 'number') {
-      // TODO: Better error message (need reverse parser)
-      throw new Error(`[trim] Math result is not a number: '${result}'`)
-    }
-
-    return [`0x${decToHex(result)}`]
-  },
+  math: makeMathMacro(),
+  'math/ceil': makeMathMacro({ direction: 'ceil' }),
+  'math/floor': makeMathMacro({ direction: 'floor' }),
 
   '+': makeMathOpMacro('+'),
   '-': makeMathOpMacro('-'),
   '*': makeMathOpMacro('*'),
   '/': makeMathOpMacro('/'),
+  '//': makeMathOpMacro('/', 'math/floor'),
 
   'abi/fn-selector'(functionSigString) {
     const [sig] = this.parseSexp(functionSigString)
@@ -74,7 +46,7 @@ export const standardMacros: MacroDefs = {
 }
 
 // Kinda roundabout way of doing this, but it's better than implementing an operator precedence parser I guess
-function makeMathOpMacro(op: string): MacroFn {
+function makeMathOpMacro(op: string, mathMacro='math'): MacroFn {
   return function mathOpMacro (...terms) {
     if (terms.length < 2) {
       throw new Error(`[trim] ${op} expects at least 2 arguments`)
@@ -82,9 +54,46 @@ function makeMathOpMacro(op: string): MacroFn {
     const [first, ...rest] = terms
     return [
       rest.reduce((a, b) => {
-        return ['math', a, op, b]
+        return [mathMacro, a, op, b]
       }, first)
     ]
+  }
+}
+
+function makeMathMacro(options: { direction?: 'ceil' | 'floor' } = {}): MacroFn {
+  return function mathMacro (...vals) {
+    const validTerms: (string | number)[] = vals.map(term => {
+      // Check for math specific terms first since these are not normally valid tokens
+      if (typeof term === 'string' && /^(\+|-|\*|\/)/.test(term)) {
+        return term
+      }
+
+      // Otherwise, resolve Trim terms as usual
+      const [result] = this.parseSexp(term)
+      if (result.type !== 'literal' || result.subtype !== 'hex') {
+        // TODO: Better error message (need reverse parser)
+        throw new Error(`[trim] Invalid math term: '${'name' in result ? result.name : JSON.stringify(result)}'`)
+      }
+      return parseInt(result.value, 16)
+    })
+
+    const mathExpression = validTerms.join(' ');
+
+    // Sandbox
+    const context = createContext({});
+    let result = runInNewContext(mathExpression, context, {
+      timeout: 100,
+      displayErrors: true
+    });
+
+    if (typeof result !== 'number') {
+      // TODO: Better error message (need reverse parser)
+      throw new Error(`[trim] Math result is not a number: '${result}'`)
+    }
+    if (options.direction === 'ceil')  result = Math.ceil(result)
+    if (options.direction === 'floor') result = Math.floor(result)
+
+    return [`0x${decToHex(result)}`]
   }
 }
 

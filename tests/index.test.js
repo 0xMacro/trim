@@ -316,10 +316,16 @@ o.spec('math', function () {
     const source = trim.source`
       (push (math 1 + 2 * 30 / 4 - 5))
       (push (- (+ 1 (/ (* 2 30) 4)) 5))
+      (push (// 10 3))
+      (push (math/ceil 8 / 3))
+      (push (math/floor 100 / 24))
     `
     const expectedBasm = `
       PUSH1 0x0b
       PUSH1 0x0b
+      PUSH1 0x03
+      PUSH1 0x03
+      PUSH1 0x04
     `
     o(compileTrim(source)).equals(compileBasm(expectedBasm))
   })
@@ -351,6 +357,26 @@ o.spec('math', function () {
     }
     catch(err) {
       o(err.message).equals(`[trim] Invalid token: 'blah'`)
+    }
+  })
+
+  o('throws on floating point result', function () {
+    try {
+      compileTrim(`(push (/ 10 3))`)
+      o('should not reach here').equals(false)
+    }
+    catch(err) {
+      o(err.message).equals(`[trim] Invalid token: '0x03.5555555555556'`)
+    }
+  })
+
+  o('throws on negative number', function () {
+    try {
+      compileTrim(`(push (- 3 5))`)
+      o('should not reach here').equals(false)
+    }
+    catch(err) {
+      o(err.message).equals(`[trim] Invalid token: '0x-2'`)
     }
   })
 })

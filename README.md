@@ -185,16 +185,28 @@ Trim has some built-in macros. It has user-defined macros too.
 
 ### math
 
-The `math` macro allows you to make compile-time calculations for more robust and readable code.
+You have two choices when it comes to compile-time math calculations:
 
-For example, this code copies the incoming function selector onto the stack:
+1. Use each operator macro directly, or
+2. Use the `math` macro to write an expression with natural mathmatical operator precedence.
+
+For example, the following two lines are equivalent:
 
 ```trim
-(CALLDATACOPY (math 1word - 4bytes) 0 4bytes)
-(MLOAD 0)
+(push (math 1 + 2 * 30 / 4 - 5))
+(push (- (+ 1 (/ (* 2 30) 4)) 5))
 ```
 
-Personally, I find this a little more readable than `(CALLDATACOPY 0x1c 0 4)`.
+Both methods pass the expression to the JS runtime. Results must be positive integers.
+
+If you're writing an expression that does not naturally converge into an integer, you can use the following helpers:
+
+```trim
+(push (// 10 3)) ;=> 3 (integer division)
+
+(push (math/ceil  10 / 3)) ;=> 4
+(push (math/floor 10 / 3)) ;=> 3
+```
 
 ### abi/fn-selector
 
