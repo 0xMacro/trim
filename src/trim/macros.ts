@@ -33,6 +33,11 @@ export const standardMacros: MacroDefs = {
     return [`0x${decToHex(result)}`]
   },
 
+  '+': makeMathOpMacro('+'),
+  '-': makeMathOpMacro('-'),
+  '*': makeMathOpMacro('*'),
+  '/': makeMathOpMacro('/'),
+
   'abi/fn-selector'(functionSigString) {
     const [sig] = this.parseSexp(functionSigString)
     if (sig.type !== 'literal' || sig.subtype !== 'string') {
@@ -58,6 +63,21 @@ export const standardMacros: MacroDefs = {
   def() { return [] },
   defconst() { return [] },
   defcounter() { return [] },
+}
+
+// Kinda roundabout way of doing this, but it's better than implementing an operator precedence parser I guess
+function makeMathOpMacro(op: string): MacroFn {
+  return function mathOpMacro (...terms) {
+    if (terms.length < 2) {
+      throw new Error(`[trim] ${op} expects at least 2 arguments`)
+    }
+    const [first, ...rest] = terms
+    return [
+      rest.reduce((a, b) => {
+        return ['math', a, op, b]
+      }, first)
+    ]
+  }
 }
 
 function makeReMacro(opcode: 'REVERT' | 'RETURN'): MacroFn {

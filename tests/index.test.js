@@ -1,4 +1,5 @@
 import o from 'ospec'
+import {trim} from '../dist/index.js'
 import {compileTrim} from '../dist/trim/index.js'
 import {parseTrim} from '../dist/trim/parse.js'
 import {compileBasm} from '../dist/basm.js'
@@ -312,10 +313,12 @@ o.spec('notations', function () {
 
 o.spec('math', function () {
   o('expression literals', function () {
-    const source = `
+    const source = trim.source`
       (push (math 1 + 2 * 30 / 4 - 5))
+      (push (- (+ 1 (/ (* 2 30) 4)) 5))
     `
     const expectedBasm = `
+      PUSH1 0x0b
       PUSH1 0x0b
     `
     o(compileTrim(source)).equals(compileBasm(expectedBasm))
