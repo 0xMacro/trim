@@ -449,8 +449,8 @@ o.spec('user-defined macros', function () {
       (push $foo)
       (def $$ () 0x09)
       (push $$)
-      (defconst DECIMALS 18)
-      (push DECIMALS)
+      (defconst DECIMALS_NUMBER_1 18)
+      (push DECIMALS_NUMBER_1)
     `
     const expectedBasm = `
       PUSH1 0x07
@@ -466,6 +466,25 @@ o.spec('user-defined macros', function () {
     catch(err) {
       o(err.message).equals(`[trim] Invalid token: 'no'`)
     }
+  })
+
+  o('const names cannot start with number but can start with underscore', function () {
+    try {
+      compileTrim(`(defconst 1_DECIMALS 18)`)
+      o('should not reach here').equals(false)
+    }
+    catch(err) {
+      o(err.message).equals(`[trim] Non-$-prefixed constants must start with uppercase letter or underscore: '1_DECIMALS'`)
+    }
+
+    const source = `
+      (defconst _DECIMALS 18)
+      (push _DECIMALS)
+    `
+    const expectedBasm = `
+      PUSH1 0x12
+    `
+    o(compileTrim(source)).equals(compileBasm(expectedBasm))
   })
 
   o('sugar compatibility', function () {
@@ -544,6 +563,57 @@ o.spec('user-defined macros', function () {
       MSTORE
     `
     o(compileTrim(source)).equals(compileBasm(expectedBasm))
+  })
+
+  o('const naming conventions', function () {
+    // Test valid $-prefixed constants with various characters
+    const validDollarSource = `
+      (defconst $my-const 1)
+      (defconst $MY_CONST 2)
+      (defconst $my_const 3)
+      (defconst $my$const 4)
+      (push $my-const)
+      (push $MY_CONST)
+      (push $my_const)
+      (push $my$const)
+    `
+    const expectedDollarBasm = `
+      PUSH1 0x01
+      PUSH1 0x02
+      PUSH1 0x03
+      PUSH1 0x04
+    `
+    o(compileTrim(validDollarSource)).equals(compileBasm(expectedDollarBasm))
+
+    // Test valid SCREAMING_SNAKE_CASE constants
+    const validUpperSource = `
+      (defconst MY_CONST 1)
+      (defconst ANOTHER_CONST 2)
+      (push MY_CONST)
+      (push ANOTHER_CONST)
+    `
+    const expectedUpperBasm = `
+      PUSH1 0x01
+      PUSH1 0x02
+    `
+    o(compileTrim(validUpperSource)).equals(compileBasm(expectedUpperBasm))
+
+    // Test invalid non-$ lowercase constants
+    try {
+      compileTrim(`(defconst myConst 1)`)
+      o('should not reach here').equals(false)
+    } catch(err) {
+      o(err.message).equals(`[trim] Non-$-prefixed constants must start with uppercase letter or underscore: 'myConst'`)
+    }
+
+    // Test invalid mixed case constants without $
+    try {
+      compileTrim(`(defconst My_Const 1)`)
+      o('should not reach here').equals(false)
+    } catch(err) {
+      o(err.message).equals(`[trim] Non-$-prefixed constants must be in SCREAMING_SNAKE_CASE: 'My_Const'`)
+    }
+
   })
 })
 

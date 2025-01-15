@@ -6,6 +6,30 @@ const HEX_VAL = /^0x[0-9a-fA-F]+$/
 const DEC_VAL = /^[0-9]+$/
 const BYTE_COUNT_VAL = /^([0-9]+)(byte|word)s?$/
 
+// Constant naming patterns
+const DOLLAR_PREFIX_PATTERN = /^\$[A-Za-z0-9_\-$]*$/
+const SCREAMING_SNAKE_PATTERN = /^[A-Z_][A-Z0-9_]*$/
+
+function isValidConstantName(name: string): boolean {
+  if (name.startsWith('$')) {
+    return DOLLAR_PREFIX_PATTERN.test(name)
+  }
+  return SCREAMING_SNAKE_PATTERN.test(name)
+}
+
+function getConstantNameError(name: string): string {
+  if (!name.startsWith('$') && !/^[A-Z_]/.test(name)) {
+    return `Non-$-prefixed constants must start with uppercase letter or underscore`
+  }
+  if (name.startsWith('$') && !DOLLAR_PREFIX_PATTERN.test(name)) {
+    return `$-prefixed constants must match pattern: $[A-Za-z0-9_-$]*`
+  }
+  if (!name.startsWith('$') && !SCREAMING_SNAKE_PATTERN.test(name)) {
+    return `Non-$-prefixed constants must be in SCREAMING_SNAKE_CASE`
+  }
+  return 'Invalid constant name'
+}
+
 const MACRO_LOOP_LIMIT = parseInt(process.env.MACRO_LOOP_LIMIT || '', 10) || 250
 
 type GenerateBytecodeAstOptions = {
@@ -112,6 +136,12 @@ function _generateBytecodeAst(exp: SexpNode, ctx: {
     }
     else if (firstNode === 'defconst') {
       const [name, valueNode] = exp.slice(1)
+      if (typeof name !== 'string') {
+        throw new Error(`[trim] defconst requires a name`)
+      }
+      if (!isValidConstantName(name)) {
+        throw new Error(`[trim] ${getConstantNameError(name)}: '${name}'`)
+      }
       const [value] = _generateBytecodeAst(valueNode, { ...ctx, level: ctx.level + 1 })
       if (value.type !== 'literal' || value.subtype !== 'hex') {
         throw new Error(`[trim] const requires a literal value`)
@@ -129,7 +159,7 @@ function _generateBytecodeAst(exp: SexpNode, ctx: {
   else if (typeof exp !== 'string') {
     return [exp]
   }
-  else if (ctx.macros[exp] && (exp[0] === '$' || /^[A-Z]+$/.test(exp))) {
+  else if (ctx.macros[exp] && isValidConstantName(exp)) {
     // Allow bare macro calls, e.g. `(push $myMacro)` or `(push MY_CONST)`
     return _generateBytecodeAst([exp], ctx)
   }
