@@ -404,7 +404,6 @@ o.spec('macros', function () {
     o(compileTrim(source)).equals(compileBasm(expectedBasm))
   })
 
-
   o('defcounter', function () {
     const source = `
       (defcounter $a)
@@ -422,6 +421,48 @@ o.spec('macros', function () {
       PUSH1 0x0a
       PUSH1 0x0b
       PUSH1 0xcb
+    `
+    o(compileTrim(source)).equals(compileBasm(expectedBasm))
+  })
+
+  o('label/append', function () {
+    const source = trim.source`
+      PUSH4 0x11223344
+      #foo
+      PUSH3 0x556677
+      (label/append #foo -bar)
+      (push #foo-bar)
+    `
+    const expectedBasm = `
+      PUSH4 0x11223344
+      PUSH3 0x556677
+      PUSH2 0x0009
+    `
+    o(compileTrim(source)).equals(compileBasm(expectedBasm))
+  })
+
+  o('spread', function () {
+    const source = trim.source`
+      (def block (label ...body) label JUMPDEST ...body (label/append label /exit) JUMPDEST)
+      CALLER
+      (block #foo
+        PUSH1 0xff
+        (JUMPI #foo 0)
+        (JUMP #foo/exit)
+      )
+      PUSH1 0xcc
+    `
+    const expectedBasm = `
+      CALLER
+      JUMPDEST
+      PUSH1 0xff
+      PUSH0
+      PUSH2 0x0001
+      JUMPI
+      PUSH2 0x000d
+      JUMP
+      JUMPDEST
+      PUSH1 0xcc
     `
     o(compileTrim(source)).equals(compileBasm(expectedBasm))
   })

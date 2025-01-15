@@ -39,6 +39,28 @@ export const standardMacros: MacroDefs = {
   'revert': makeReMacro('REVERT'),
   'return': makeReMacro('RETURN'),
 
+  'label/append'(labelNode, xNode) {
+    const [label] = this.parseSexp(labelNode)
+    if (label.type !== 'label') {
+      throw new Error(`[trim] label/append expects a label as first argument`)
+    }
+    let xLabel = (() => {
+      if (typeof xNode === 'string') {
+        return xNode
+      }
+      const [x] = this.parseSexp(xNode)
+      return (
+        x.type === 'label' ? x.name :
+        x.type === 'atom' ? x.name :
+        null
+      )
+    })()
+    if (!xLabel) {
+      throw new Error(`[trim] label/append expects a label or atom as second argument`)
+    }
+    return [`${label.name}${xLabel}`]
+  },
+
   // Empty definitions for simplifying logic elsewhere
   def() { return [] },
   defconst() { return [] },
@@ -126,21 +148,31 @@ function makeReMacro(opcode: 'REVERT' | 'RETURN'): MacroFn {
 }
 
 export function defineMacro(name: string, params: string[], body: SexpNode[]): MacroFn {
+  const restIndex = params.findIndex(p => p.startsWith('...'))
+  if (restIndex >= 0 && restIndex !== params.length - 1) {
+    throw new Error(`[trim] Macro '${name}' has a rest parameter, but it is not the last parameter`)
+  }
+  const hasRest = restIndex >= 0
   return function userMacro(...args) {
-    if (args.length !== params.length) {
+    if (hasRest) {
+      args[restIndex] = args.slice(restIndex)
+    }
+    else if (args.length !== params.length) {
       throw new Error(`[trim] Macro '${name}' expects ${params.length} arguments, got ${args.length}`)
     }
-    return walkReplace(body, new Map(params.map((param, i) => [param, args[i]])))
+    return body.flatMap(node =>
+      walkReplace(node, new Map(params.map((param, i) => [param, args[i]]))))
   }
 }
 
 
-function walkReplace<T extends SexpNode>(exp: T, paramsToArg: Map<string, SexpNode>): T extends Array<any> ? SexpNode[] : SexpNode {
+function walkReplace<T extends SexpNode>(exp: T, paramsToArg: Map<string, SexpNode>): SexpNode[] {
   if (Array.isArray(exp)) {
-    return exp.map(node => walkReplace(node, paramsToArg))
+    return [exp.flatMap(node => walkReplace(node, paramsToArg))]
   }
   else if (typeof exp === 'string' && paramsToArg.has(exp)) {
-    return paramsToArg.get(exp) as any
+    const replaced = paramsToArg.get(exp)!
+    return exp.startsWith('...') ? replaced as any : [replaced]
   }
-  return exp as any
+  return [exp] as any
 }
