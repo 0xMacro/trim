@@ -22,7 +22,8 @@ export function compileTrim(source: string, options: CompileOptions = {}) {
     features.push0 = false
   }
   const macros = { ...standardMacros }
+  const compileOptions = { opcodes, macros, opcodesMetadata, features }
   const program = parseTrim(source, new Pos(), { topLevel: true })
-  const ast = generateBytecodeAst(program, { opcodes, macros })
-  return '0x' + generateBytecode(ast, { opcodes, macros, opcodesMetadata, features }).join('')
+  const ast = generateBytecodeAst(program, compileOptions)
+  return '0x' + generateBytecode(ast, compileOptions).join('')
 }

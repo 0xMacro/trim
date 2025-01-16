@@ -466,6 +466,16 @@ o.spec('macros', function () {
     `
     o(compileTrim(source)).equals(compileBasm(expectedBasm))
   })
+
+  o('compile', function () {
+    const source = `
+      (push (compile PUSH2 0xffff (push (+ 0x09 1))))
+    `
+    const expectedBasm = `
+      PUSH5 0x61ffff600a
+    `
+    o(compileTrim(source)).equals(compileBasm(expectedBasm))
+  })
 })
 
 o.spec('user-defined macros', function () {

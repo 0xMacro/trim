@@ -8,23 +8,26 @@ const BYTE_COUNT_VAL = /^([0-9]+)(byte|word)s?$/
 
 const MACRO_LOOP_LIMIT = parseInt(process.env.MACRO_LOOP_LIMIT || '', 10) || 250
 
-type GenerateBytecodeAstOptions = {
+type CompileOptions = {
   macros: MacroDefs
   opcodes: OpcodeDef[]
+  opcodesMetadata: Record<string, OpcodeMeta>
+  features: GenerateFeatures
 }
-export function generateBytecodeAst(sexps: ToplevelSexp, { opcodes, macros }: GenerateBytecodeAstOptions) {
-  const opcodesByAsm = getBackwardsFriendlyOpcodesByAsm(opcodes)
-  return sexps.flatMap(exp => _generateBytecodeAst(exp, { opcodesByAsm, macros, level: 0, limit: 0, inMacro: false }))
+export function generateBytecodeAst(sexps: ToplevelSexp, options: CompileOptions) {
+  const opcodesByAsm = getBackwardsFriendlyOpcodesByAsm(options.opcodes)
+  return sexps.flatMap(exp => _generateBytecodeAst(exp, { options, opcodesByAsm, level: 0, limit: 0, inMacro: false }))
 }
 
 function _generateBytecodeAst(exp: SexpNode, ctx: {
   opcodesByAsm: OpcodesByAsm
-  macros: MacroDefs
   level: number
   limit: number
   inMacro: boolean
+  options: CompileOptions
 }): BytecodeAstNode[] {
   const { opcodesByAsm } = ctx
+  const { macros } = ctx.options
   if (Array.isArray(exp)) {
     if (!exp.length) return []
 
@@ -42,7 +45,7 @@ function _generateBytecodeAst(exp: SexpNode, ctx: {
       return [{ type: 'exp', nodes: exp.flatMap(e => _generateBytecodeAst(e, { ...ctx, level: ctx.level + 1 })) }]
     }
 
-    if (!ctx.macros[firstNode]) {
+    if (!macros[firstNode]) {
       throw new Error(`[trim] No such macro: '${firstNode}'`)
     }
     if (ctx.level + ctx.limit > MACRO_LOOP_LIMIT) {
@@ -70,7 +73,7 @@ function _generateBytecodeAst(exp: SexpNode, ctx: {
         }
       }
 
-      ctx.macros[name] = defineMacro(name, params as string[], body)
+      macros[name] = defineMacro(name, params as string[], body)
 
       return []
     }
@@ -89,7 +92,7 @@ function _generateBytecodeAst(exp: SexpNode, ctx: {
       })()
 
       let counter = start
-      ctx.macros[name] = function counterMacro(op, inc) {
+      macros[name] = function counterMacro(op, inc) {
         let val = counter
         if (op === '++' || op === '+=') {
           const [amount] = inc
@@ -118,18 +121,29 @@ function _generateBytecodeAst(exp: SexpNode, ctx: {
       }
       return _generateBytecodeAst(['def', name, [], value], ctx)
     }
+    else if (firstNode === 'compile') {
+      const ast = exp.slice(1).flatMap(e => _generateBytecodeAst(e, {
+        level: 0,
+        limit: 0,
+        inMacro: false,
+        options: ctx.options,
+        opcodesByAsm,
+      }))
+      const bytecode = generateBytecode(ast, ctx.options).join('')
+      return [{ type: 'literal', subtype: 'hex', value: bytecode }]
+    }
     else {
       function parseSexp(sexp: SexpNode) {
         return _generateBytecodeAst(sexp, { ...ctx, inMacro: true, level: ctx.level + 1 })
       }
-      const replaced = ctx.macros[firstNode].call({ parseSexp, level: ctx.level }, ...exp.slice(1))
+      const replaced = macros[firstNode].call({ parseSexp, level: ctx.level }, ...exp.slice(1))
       return replaced.flatMap(node => _generateBytecodeAst(node, { ...ctx, limit: ctx.limit + 1 }))
     }
   }
   else if (typeof exp !== 'string') {
     return [exp]
   }
-  else if (ctx.macros[exp] && (exp[0] === '$' || /^[A-Z]+$/.test(exp))) {
+  else if (macros[exp] && (exp[0] === '$' || /^[A-Z]+$/.test(exp))) {
     // Allow bare macro calls, e.g. `(push $myMacro)` or `(push MY_CONST)`
     return _generateBytecodeAst([exp], ctx)
   }
@@ -167,13 +181,7 @@ function _generateBytecodeAst(exp: SexpNode, ctx: {
   }
 }
 
-type GenerateBytecodeOptions = {
-  macros: MacroDefs
-  opcodes: OpcodeDef[]
-  opcodesMetadata: Record<string, OpcodeMeta>
-  features: GenerateFeatures
-}
-export function generateBytecode(ast: BytecodeAstNode[], { opcodes, macros, opcodesMetadata, features }: GenerateBytecodeOptions): string[] {
+export function generateBytecode(ast: BytecodeAstNode[], { opcodes, macros, opcodesMetadata, features }: CompileOptions): string[] {
   const pc = prop(0)
   const inc = (byteCount: number) => pc(pc() + byteCount)
   const labels = {} as Record<string, number>
