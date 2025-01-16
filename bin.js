@@ -1,7 +1,11 @@
 #!/usr/bin/env node
 
 import { readFileSync } from 'fs'
+import { fileURLToPath } from 'url'
+import path from 'path'
 import { trim, debugDecompileToBasm } from './dist/index.js'
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 const args = process.argv.slice(2)
 const options = { asm: false, decompile: false, version: false }
@@ -27,7 +31,7 @@ const fileArgs = args.filter(arg => {
 const isStdin = !process.stdin.isTTY
 
 if (options.version) {
-  const pkg = readFileSync('package.json', 'utf8')
+  const pkg = readFileSync(path.join(__dirname, 'package.json'), 'utf8')
   console.log(JSON.parse(pkg).version)
   process.exit(0)
 }
