@@ -1,4 +1,5 @@
 {
+  "private": true,
   "name": "trim-evm",
   "displayName": "Trim EVM",
   "description": "Syntax highlighting for trim`...` blocks in JS/TS",
