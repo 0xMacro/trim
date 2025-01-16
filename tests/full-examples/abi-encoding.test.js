@@ -171,6 +171,7 @@ o.spec('ABI Encoding', function () {
 
       (defcounter reg-counter)
       (def defreg (name) (defconst name (math 1word * (reg-counter ++))))
+      (def loop (label ...body) label JUMPDEST ...body (JUMP label) (label/append label /break) JUMPDEST)
 
       (defreg $$)
       (defreg $xlen)
@@ -201,57 +202,42 @@ o.spec('ABI Encoding', function () {
       ;;
       (MSTORE $$ (MUL 1word (MLOAD $xlen))) ; cumulative offset; starts at end of parameters
 
-      #outer-loop
-      JUMPDEST
-      (write (MLOAD $$))
+      (loop #x-items
+        (write (MLOAD $$))
 
-      ; Increment for-loop variables
-      (MSTORE $x (ADD 1 (MLOAD $x)))
-      (JUMPI #outer-loop-done (EQ (MLOAD $x) (MLOAD $xlen)))
+        ; Increment for-loop variables
+        (MSTORE $x (ADD 1 (MLOAD $x)))
+        (JUMPI #x-items/break (EQ (MLOAD $x) (MLOAD $xlen)))
 
-      (MSTORE $$
-        (ADD 1word (ADD (MLOAD $$) (MUL 1word (MLOAD $ylen))))) ; length of an inner array + 1word for its length field
-      (JUMP #outer-loop)
-
-      #outer-loop-done
-      JUMPDEST
+        (MSTORE $$
+          (ADD 1word (ADD (MLOAD $$) (MUL 1word (MLOAD $ylen))))) ; length of an inner array + 1word for its length field
+      )
 
       ;;
-      ;; Build inner arrays
+      ;; Build xlen inner arrays, each of length ylen
       ;;
       (MSTORE $x 0)      ; reuse x register
       (MSTORE $$ 0xff00) ; the item value counter we'll be appending
 
-      #array-build-loop
-      JUMPDEST
+      (loop #build-array
+        (JUMPI #build-array/break (EQ (MLOAD $x) (MLOAD $xlen)))
 
-      (EQ (MLOAD $x) (MLOAD $xlen)) ; if x == xlen, then all arrays are fulfilled
-      (JUMPI #array-build-loop-done)
+        (MSTORE $y 0)
+        (write (MLOAD $ylen)) ; length of inner array
 
-      (MSTORE $y 0)
-      (write (MLOAD $ylen)) ; length of inner array
+        (loop #build-item
+          (JUMPI #build-item/break (EQ (MLOAD $y) (MLOAD $ylen)))
 
-      #item-loop
-      JUMPDEST
+          (write (MLOAD $$))
 
-      (EQ (MLOAD $y) (MLOAD $ylen)) ; if y == ylen, then inner array is fulfilled
-      (JUMPI #item-loop-done)
+          (MSTORE $$ (ADD 1 (MLOAD $$))) ; increment item value counter
+          (MSTORE $y (ADD 1 (MLOAD $y))) ; increment inner loop index
+        )
+        (MSTORE $x (ADD 1 (MLOAD $x))) ; increment outer loop index
+      )
 
-      (write (MLOAD $$))
-
-      (MSTORE $$ (ADD 1 (MLOAD $$))) ; increment item value counter
-      (MSTORE $y (ADD 1 (MLOAD $y))) ; increment inner loop index
-
-      (JUMP #item-loop)
-
-      #item-loop-done
-      JUMPDEST
-      (MSTORE $x (ADD 1 (MLOAD $x))) ; increment outer loop index
-      (JUMP #array-build-loop)
-
-      #array-build-loop-done
-      JUMPDEST
-      (RETURN $ret (SUB (MLOAD $mem) $ret)) ; Return all data written
+      ;; Return all data written
+      (RETURN $ret (SUB (MLOAD $mem) $ret))
     `
     const vm = makeFullExampleVm({ source })
     await vm.setup()
