@@ -425,6 +425,33 @@ o.spec('macros', function () {
     o(compileTrim(source)).equals(compileBasm(expectedBasm))
   })
 
+  o('defcounter assign', function () {
+    const source = `
+      (defcounter c)
+      (push (c ++))
+      (push (c ++))
+      (push (c = 10))
+      (push (c += 1))
+      (counter/reset c)
+      (push (c ++))
+      (push (c ++))
+      (counter/reset c 0xf0)
+      (push (c ++))
+      (push (c ++))
+    `
+    const expectedBasm = `
+      PUSH0
+      PUSH1 0x01
+      PUSH1 0x0a
+      PUSH1 0x0b
+      PUSH0
+      PUSH1 0x01
+      PUSH1 0xf0
+      PUSH1 0xf1
+    `
+    o(compileTrim(source)).equals(compileBasm(expectedBasm))
+  })
+
   o('label/append', function () {
     const source = trim.source`
       PUSH4 0x11223344

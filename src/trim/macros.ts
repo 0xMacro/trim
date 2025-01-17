@@ -66,6 +66,7 @@ export const standardMacros: MacroDefs = {
   compile() { return [] },
   defconst() { return [] },
   defcounter() { return [] },
+  'counter/reset'() { return [] },
 }
 
 // Kinda roundabout way of doing this, but it's better than implementing an operator precedence parser I guess

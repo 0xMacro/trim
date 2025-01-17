@@ -94,7 +94,7 @@ function _generateBytecodeAst(exp: SexpNode, ctx: {
       let counter = start
       macros[name] = function counterMacro(op, inc) {
         let val = counter
-        if (op === '++' || op === '+=') {
+        if (op === '++' || op === '+=' || op === '=') {
           const [amount] = inc
             ? _generateBytecodeAst(inc, { ...ctx, level: ctx.level + 1 })
             : [{ type: 'literal', subtype: 'hex', value: '01' }]
@@ -103,14 +103,31 @@ function _generateBytecodeAst(exp: SexpNode, ctx: {
             throw new Error(`[trim] Invalid counter increment value`)
           }
 
-          counter += parseInt(amount.value, 16)
-          if (op === '+=') val = counter
+          counter = (op === '=' ? 0 : counter) + parseInt(amount.value, 16)
+          if (op !== '++') val = counter
           else if (inc) throw new Error(`[trim] Counter ++ does not take an increment value`)
+        }
+        else if (op) {
+          throw new Error(`[trim] Unknown counter operation: '${op}'`)
         }
 
         return [{ type: 'literal', subtype: 'hex', value: decToHex(val) }]
       }
 
+      return []
+    }
+    else if (firstNode === 'counter/reset') {
+      const [counter, startNode] = exp.slice(1)
+      const start = (function () {
+        if (!startNode) return '0'
+        const [s] = _generateBytecodeAst(startNode, { ...ctx, level: ctx.level + 1 })
+        if (s.type !== 'literal' || s.subtype !== 'hex') {
+          throw new Error(`[trim] invalid counter/reset start value`)
+        }
+        return s
+      })()
+
+      _generateBytecodeAst([counter, '=', start], ctx) // mutate counter
       return []
     }
     else if (firstNode === 'defconst') {

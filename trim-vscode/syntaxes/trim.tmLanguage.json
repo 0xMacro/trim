@@ -5,7 +5,7 @@
   "patterns": [
     {
       "name": "keyword.control.trim",
-      "match": "(?<=\\()[ \\t]*\\b(#runtime|def|defconst|defcounter|push|math(?:/(?:div|floor|ceil))?|//|[+*/-]|abi/fn-selector|label/append|init-runtime-code|revert|return)\\b"
+      "match": "(?<=\\()[ \\t]*\\b(#runtime|def|defconst|defcounter|push|math(?:/(?:div|floor|ceil))?|//|[+*/-]|abi/fn-selector|counter/reset|label/append|init-runtime-code|revert|return)\\b"
     },
 
     {
