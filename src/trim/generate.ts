@@ -1,5 +1,5 @@
 import { BytecodeAstNode, GenerateFeatures, MacroDefs, OpcodeDef, OpcodeMeta, OpcodesByAsm, SexpNode, ToplevelSexp } from "../types"
-import { prop, Prop, pad, getBackwardsFriendlyOpcodesByAsm, decToHex } from "../util.js"
+import { prop, Prop, pad, getBackwardsFriendlyOpcodesByAsm, decToHex, Counter } from "../util.js"
 import { defineMacro } from "./macros.js"
 
 const HEX_VAL = /^0x[0-9a-fA-F]+$/
@@ -60,7 +60,10 @@ function _generateBytecodeAst(exp: SexpNode, ctx: {
         throw new Error(`[trim] 'scope' macro can only be on top level`)
       }
       let scope = { ...macros }
-      return exp.slice(1).flatMap(e => _generateBytecodeAst(e, { ...ctx, options: { ...ctx.options, macros: scope } }))
+      return [{
+        type: 'scope',
+        nodes: exp.slice(1).flatMap(e => _generateBytecodeAst(e, { ...ctx, options: { ...ctx.options, macros: scope } }))
+      }]
     }
     else if (firstNode === 'def') {
       if (ctx.level > 1) {
@@ -208,16 +211,25 @@ function _generateBytecodeAst(exp: SexpNode, ctx: {
   }
 }
 
-export function generateBytecode(ast: BytecodeAstNode[], { opcodes, opcodesMetadata, features }: CompileOptions): string[] {
-  const pc = prop(0)
-  const inc = (byteCount: number) => pc(pc() + byteCount)
-  const labels = {} as Record<string, number>
+type GenerateContext = {
+  pc: Counter
+  level: number
+  labels: Record<string, number>
+  options: CompileOptions
+  seenRuntime: Prop<boolean>
+}
+export function generateBytecode(ast: BytecodeAstNode[], options: CompileOptions): string[] {
+  const nodes = _generateBytecodeToplevel(ast, { pc: new Counter(), labels: {}, level: 0, options, seenRuntime: prop(false) })
+  return nodes.map(node => typeof node === 'string' ? node : node())
+}
+
+export function _generateBytecodeToplevel(ast: BytecodeAstNode[], ctx: GenerateContext): (string | (() => string))[] {
+  const { pc, labels } = ctx
+  const { opcodes, opcodesMetadata, features } = ctx.options
   const opcodesByAsm = getBackwardsFriendlyOpcodesByAsm(opcodes)
 
-  let seenRuntime = false
-
   function registerLabel(name: string) {
-    const isRuntime = seenRuntime
+    const isRuntime = ctx.seenRuntime()
     return function resolveLabel() {
       if (labels[name] === undefined)
         throw new Error(`[trim] No such label: '${name}'`)
@@ -229,14 +241,17 @@ export function generateBytecode(ast: BytecodeAstNode[], { opcodes, opcodesMetad
     }
   }
 
-  const ast2 = ast.flatMap((node, i) => {
-    if (node.type === 'literal' && node.subtype === 'hex') {
-      inc(node.value.length / 2)
+  return ast.flatMap((node, i) => {
+    if (node.type === 'scope') {
+      return _generateBytecodeToplevel(node.nodes, { ...ctx, pc, labels: Object.create(labels), level: ctx.level + 1 })
+    }
+    else if (node.type === 'literal' && node.subtype === 'hex') {
+      pc.inc(node.value.length / 2)
       return node.value
     }
     else if (node.type === 'op' || node.type === 'literal') {
       return _generateBytecode([node], {
-        inc,
+        inc: pc.inc,
         seenTop: () => false,
         level: 0,
         features,
@@ -250,7 +265,7 @@ export function generateBytecode(ast: BytecodeAstNode[], { opcodes, opcodesMetad
       const seenTop = prop(false)
       const trailingBytes: string[] = []
       const bytes = _generateBytecode(node.nodes, {
-        inc,
+        inc: pc.inc,
         seenTop,
         level: 0,
         features,
@@ -261,7 +276,7 @@ export function generateBytecode(ast: BytecodeAstNode[], { opcodes, opcodesMetad
           trailingBytes.push(bytes)
         }
       })
-      inc(trailingBytes.length)
+      pc.inc(trailingBytes.length)
       return bytes.concat(trailingBytes)
     }
     else if (node.type === 'top') {
@@ -271,9 +286,9 @@ export function generateBytecode(ast: BytecodeAstNode[], { opcodes, opcodesMetad
       if (node.name in labels) {
         throw new Error(`[trim] Duplicate label definition: '${node.name}'`)
       }
-      labels[node.name] = pc()
+      labels[node.name] = pc.value
       if (node.name === '#runtime') {
-        seenRuntime = true
+        ctx.seenRuntime(true)
       }
       return []
     }
@@ -281,8 +296,6 @@ export function generateBytecode(ast: BytecodeAstNode[], { opcodes, opcodesMetad
       throw new Error(`[trim] Unexpected ${(node as any).type} node ${'name' in node ? `'${node.name}'` : ''}`)
     }
   })
-
-  return ast2.map(node => typeof node === 'string' ? node : node())
 }
 
 function _generateBytecode(ast: BytecodeAstNode[], ctx: {

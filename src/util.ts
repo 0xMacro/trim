@@ -49,6 +49,13 @@ export function prop<T>(value: T): Prop<T> {
   }
 }
 
+export class Counter {
+  constructor(public value = 0) {}
+  inc = (amount: number) => {
+    return this.value += amount
+  }
+}
+
 export class Pos {
   constructor(public line=1, public col=1, public i=0) {}
   push(source: string) {

@@ -22,6 +22,7 @@ export type BytecodeAstNode =
   | { type: 'top' }
   | { type: 'literal', subtype: 'hex' | 'string', value: string }
   | { type: 'label', name: string }
+  | { type: 'scope', nodes: BytecodeAstNode[] }
   | ExpAtom
   | ExpNode
 

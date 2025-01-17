@@ -544,6 +544,69 @@ o.spec('macros', function () {
       `
       o(compileTrim(source)).equals(compileBasm(expectedBasm))
     })
+
+    o('label scope', function () {
+      const source = `
+        PUSH0
+        #foo
+        (push #foo)
+        (scope
+          #bar
+          (push #bar)
+        )
+        (scope
+          #bar
+          (push #bar)
+          (push #baz)
+        )
+        #baz
+      `
+      const expectedBasm = `
+        PUSH0
+        PUSH2 0x0001
+        PUSH2 0x0004
+        PUSH2 0x0007
+        PUSH2 0x000d
+      `
+      o(compileTrim(source)).equals(compileBasm(expectedBasm))
+    })
+
+    o('label scope with runtime', function () {
+      const source = `
+        PUSH0
+        #runtime
+        #foo
+        (push #foo)
+        (scope
+          #bar
+          (push #bar)
+        )
+        (scope
+          #bar
+          (push #bar)
+          (push #baz)
+        )
+        #baz
+      `
+      const expectedBasm = `
+        PUSH0
+        PUSH2 0x0000
+        PUSH2 0x0003
+        PUSH2 0x0006
+        PUSH2 0x000c
+      `
+      o(compileTrim(source)).equals(compileBasm(expectedBasm))
+    })
+
+    o('cannot shadow labels', function () {
+      try {
+        compileTrim(`#foo (scope #foo)`)
+        o('should not reach here').equals(false)
+      }
+      catch(err) {
+        o(err.message).equals(`[trim] Duplicate label definition: '#foo'`)
+      }
+    })
   })
 })
 
