@@ -25,7 +25,7 @@ o.spec('Static Router', function () {
     functionName: sig,
     args,
   })).then(r => {
-    console.log("Return:", r.returnValue)
+    // console.log("Return:", r.returnValue)
     if (r.results?.execResult?.exceptionError) {
       console.log('ERR:', r.results.execResult.exceptionError, r.returnValue)
     }
@@ -88,7 +88,7 @@ o.spec('Static Router', function () {
     await testcall('registerUnmanagedSystem', [SAMPLE_BYTES32, SAMPLE_ADDR], '0x88')
   })
 
-  o.only('supports diamond compatibility', async () => {
+  o('supports diamond compatibility', async () => {
     const source = makeStaticRouter([{
       name: 'GreeterModule',
       address: GREETER_MODULE,
@@ -117,32 +117,32 @@ o.spec('Static Router', function () {
     //
     // facetAddresses()
     //
-    // const addresses = decodeFunctionResult({
-    //   abi,
-    //   functionName: 'facetAddresses',
-    //   data: '0x' + await testcall('facetAddresses', []),
-    // })
-    // o(addresses.length).equals(2)
-    // o(addresses[0]).equals(GREETER_MODULE)
-    // o(addresses[1]).equals(SAMPLE_MODULE)
+    const addresses = decodeFunctionResult({
+      abi,
+      functionName: 'facetAddresses',
+      data: '0x' + await testcall('facetAddresses', []),
+    })
+    o(addresses.length).equals(2)
+    o(addresses[0]).equals(GREETER_MODULE)
+    o(addresses[1]).equals(SAMPLE_MODULE)
 
     //
     // facetAddress(bytes4 selector)
     //
-    // const facetAddress = async (sig) => decodeFunctionResult({
-    //   abi,
-    //   functionName: 'facetAddress',
-    //   data: '0x' + await testcall('facetAddress', [`0x${keccak256(Buffer.from(sig)).slice(2, 10)}`]),
-    // })
-    // o(await facetAddress('greet()')).equals(GREETER_MODULE)
-    // o(await facetAddress('greet(address)')).equals(GREETER_MODULE)
-    // o(await facetAddress('greetings(address)')).equals(GREETER_MODULE)
-    // o(await facetAddress('setGreeting(string)')).equals(GREETER_MODULE)
+    const facetAddress = async (sig) => decodeFunctionResult({
+      abi,
+      functionName: 'facetAddress',
+      data: '0x' + await testcall('facetAddress', [`0x${keccak256(Buffer.from(sig)).slice(2, 10)}`]),
+    })
+    o(await facetAddress('greet()')).equals(GREETER_MODULE)
+    o(await facetAddress('greet(address)')).equals(GREETER_MODULE)
+    o(await facetAddress('greetings(address)')).equals(GREETER_MODULE)
+    o(await facetAddress('setGreeting(string)')).equals(GREETER_MODULE)
 
-    // o(await facetAddress('initOrUpgradeNft(bytes32,string,string,string,address)')).equals(SAMPLE_MODULE)
-    // o(await facetAddress('getAssociatedSystem(bytes32)')).equals(SAMPLE_MODULE)
-    // o(await facetAddress('initOrUpgradeToken(bytes32,string,string,uint8,address)')).equals(SAMPLE_MODULE)
-    // o(await facetAddress('registerUnmanagedSystem(bytes32,address)')).equals(SAMPLE_MODULE)
+    o(await facetAddress('initOrUpgradeNft(bytes32,string,string,string,address)')).equals(SAMPLE_MODULE)
+    o(await facetAddress('getAssociatedSystem(bytes32)')).equals(SAMPLE_MODULE)
+    o(await facetAddress('initOrUpgradeToken(bytes32,string,string,uint8,address)')).equals(SAMPLE_MODULE)
+    o(await facetAddress('registerUnmanagedSystem(bytes32,address)')).equals(SAMPLE_MODULE)
 
     //
     // facetFunctionSelectors(address facet)
@@ -166,16 +166,41 @@ o.spec('Static Router', function () {
     ])
 
     //
+    // facets()
+    //
+    const facets = decodeFunctionResult({
+      abi,
+      functionName: 'facets',
+      data: '0x' + await testcall('facets', []),
+    })
+    o(facets.length).equals(2)
+    o(facets[0].facetAddress).equals(GREETER_MODULE)
+    o(facets[0].functionSelectors).deepEquals([
+      `0x${keccak256(Buffer.from('greetings(address)')).slice(2, 10)}`,
+      `0x${keccak256(Buffer.from('setGreeting(string)')).slice(2, 10)}`,
+      `0x${keccak256(Buffer.from('greet(address)')).slice(2, 10)}`,
+      `0x${keccak256(Buffer.from('greet()')).slice(2, 10)}`,
+    ])
+    o(facets[1].facetAddress).equals(SAMPLE_MODULE)
+    o(facets[1].functionSelectors).deepEquals([
+      `0x${keccak256(Buffer.from('initOrUpgradeNft(bytes32,string,string,string,address)')).slice(2, 10)}`,
+      `0x${keccak256(Buffer.from('getAssociatedSystem(bytes32)')).slice(2, 10)}`,
+      `0x${keccak256(Buffer.from('initOrUpgradeToken(bytes32,string,string,uint8,address)')).slice(2, 10)}`,
+      `0x${keccak256(Buffer.from('registerUnmanagedSystem(bytes32,address)')).slice(2, 10)}`,
+    ])
+
+
+    //
     // All functions should still operate as before
     //
-    // await testcall('greet', [], '0x11')
-    // await testcall('greet', [SAMPLE_ADDR], '0x22')
-    // await testcall('greetings', [SAMPLE_ADDR], '0x33')
-    // await testcall('setGreeting', ['hello'], '0x44')
+    await testcall('greet', [], '0x11')
+    await testcall('greet', [SAMPLE_ADDR], '0x22')
+    await testcall('greetings', [SAMPLE_ADDR], '0x33')
+    await testcall('setGreeting', ['hello'], '0x44')
 
-    // await testcall('initOrUpgradeNft', [SAMPLE_BYTES32, 'a', 'b', 'c', SAMPLE_ADDR], '0x55')
-    // await testcall('getAssociatedSystem', [SAMPLE_BYTES32], '0x66')
-    // await testcall('initOrUpgradeToken', [SAMPLE_BYTES32, 'a', 'b', 1, SAMPLE_ADDR], '0x77')
-    // await testcall('registerUnmanagedSystem', [SAMPLE_BYTES32, SAMPLE_ADDR], '0x88')
+    await testcall('initOrUpgradeNft', [SAMPLE_BYTES32, 'a', 'b', 'c', SAMPLE_ADDR], '0x55')
+    await testcall('getAssociatedSystem', [SAMPLE_BYTES32], '0x66')
+    await testcall('initOrUpgradeToken', [SAMPLE_BYTES32, 'a', 'b', 1, SAMPLE_ADDR], '0x77')
+    await testcall('registerUnmanagedSystem', [SAMPLE_BYTES32, SAMPLE_ADDR], '0x88')
   })
 })
