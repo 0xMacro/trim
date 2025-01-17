@@ -503,6 +503,48 @@ o.spec('macros', function () {
     `
     o(compileTrim(source)).equals(compileBasm(expectedBasm))
   })
+
+  o.spec('scope', function () {
+    o('macro scope (def)', function () {
+      const source = `
+        (def foo () (push 0))
+        (foo)
+        (scope
+          (def foo () (push 0xff))
+          (foo)
+          (foo)
+        )
+        (foo)
+      `
+      const expectedBasm = `
+        PUSH0
+        PUSH1 0xff
+        PUSH1 0xff
+        PUSH0
+      `
+      o(compileTrim(source)).equals(compileBasm(expectedBasm))
+    })
+
+    o('macro scope (defcounter)', function () {
+      const source = `
+        (defcounter $c)
+        (push ($c ++))
+        (scope
+          (defcounter $c 0x10)
+          (push ($c ++))
+          (push ($c ++))
+        )
+        (push ($c ++))
+      `
+      const expectedBasm = `
+        PUSH0
+        PUSH1 0x10
+        PUSH1 0x11
+        PUSH1 0x01
+      `
+      o(compileTrim(source)).equals(compileBasm(expectedBasm))
+    })
+  })
 })
 
 o.spec('user-defined macros', function () {

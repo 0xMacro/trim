@@ -63,6 +63,7 @@ export const standardMacros: MacroDefs = {
 
   // Empty definitions for simplifying logic elsewhere
   def() { return [] },
+  scope() { return [] },
   compile() { return [] },
   defconst() { return [] },
   defcounter() { return [] },

@@ -15,6 +15,9 @@ type CompileOptions = {
   features: GenerateFeatures
 }
 export function generateBytecodeAst(sexps: ToplevelSexp, options: CompileOptions) {
+  // Defensive copy as we'll be mutating macros
+  options = { ...options }
+  options.macros = { ...options.macros }
   const opcodesByAsm = getBackwardsFriendlyOpcodesByAsm(options.opcodes)
   return sexps.flatMap(exp => _generateBytecodeAst(exp, { options, opcodesByAsm, level: 0, limit: 0, inMacro: false }))
 }
@@ -52,7 +55,14 @@ function _generateBytecodeAst(exp: SexpNode, ctx: {
       throw new Error(`[trim] Macro loop limit reached`)
     }
 
-    if (firstNode === 'def') {
+    if (firstNode === 'scope') {
+      if (ctx.level > 0) {
+        throw new Error(`[trim] 'scope' macro can only be on top level`)
+      }
+      let scope = { ...macros }
+      return exp.slice(1).flatMap(e => _generateBytecodeAst(e, { ...ctx, options: { ...ctx.options, macros: scope } }))
+    }
+    else if (firstNode === 'def') {
       if (ctx.level > 1) {
         throw new Error(`[trim] 'def' macro can only be on top level`)
       }
@@ -143,7 +153,7 @@ function _generateBytecodeAst(exp: SexpNode, ctx: {
         level: 0,
         limit: 0,
         inMacro: false,
-        options: ctx.options,
+        options: { ...ctx.options, macros: { ...ctx.options.macros } },
         opcodesByAsm,
       }))
       const bytecode = generateBytecode(ast, ctx.options).join('')
