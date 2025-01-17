@@ -8,10 +8,17 @@ export type StaticRouterModules = {
   address: string
   abi: AbiJsonFragment[]
 }[]
-export function makeStaticRouter(modules: StaticRouterModules): string {
+
+export type StaticRouterOptions = {
+  diamondCompat?: boolean | 'deprioritized'
+}
+
+export function makeStaticRouter(modules: StaticRouterModules, options: StaticRouterOptions = {}): string {
   if (modules.length > 255) {
     throw new Error("[trim] Too many modules for static router (max 256)")
   }
+
+  const dcompat = !!options.diamondCompat
 
   const fns = modules.flatMap((module, moduleIndex) =>
     module.abi
@@ -75,7 +82,7 @@ export function makeStaticRouter(modules: StaticRouterModules): string {
 
     (codecopy-word $current (MLOAD $current-pos) 4bytes)
 
-    ;; If we have a match, delegate. Else, continue searching.
+    ;; If we have a match, we're done. Else, continue searching.
     (EQ (MLOAD $input) (MLOAD $current))
     (JUMPI #delegate _)
 
@@ -126,6 +133,156 @@ export function makeStaticRouter(modules: StaticRouterModules): string {
 
     #nomatch
     JUMPDEST
+
+    ${!dcompat ? '' : trim.source`
+      ;; Diamond compatibility
+      (MLOAD $input) ; Put on stack since we're only working with one value
+
+      (JUMPI #facets (EQ (abi/fn-selector "facets()") DUP1))
+      (JUMPI #facetAddress (EQ (abi/fn-selector "facetAddress(bytes4)") DUP1))
+      (JUMPI #facetAddresses (EQ (abi/fn-selector "facetAddresses()") DUP1))
+      (JUMPI #facetFunctionSelectors (EQ (abi/fn-selector "facetFunctionSelectors(address)") DUP1))
+
+      (JUMP #nomatch-diamond)
+
+      ;;
+      ;; Macro definitions for all diamond loupe functions
+      ;; At the start of a loup function, we can assume that memory is clean
+      ;;
+      (def write/setup ()
+        (defreg $mem) ; Free memory pointer (for return data)
+        (defreg $ret) ; Return data start position
+        (MSTORE $mem $ret)
+        (def write (value) (MSTORE (MLOAD $mem) value) (MSTORE $mem (ADD 1word (MLOAD $mem))))
+        (def returnall () (RETURN $ret (SUB (MLOAD $mem) $ret)))
+      )
+      (def clear (reg) (MSTORE reg 0))
+      (def loop (label ...body) label JUMPDEST ...body (JUMP label) (label/append label /break) JUMPDEST)
+
+      #facetAddress
+      JUMPDEST
+      (scope
+        (defcounter reg-counter)
+        (defreg $$)
+
+        (defreg $input)
+        (clear $input)
+        (CALLDATACOPY (math $input + 1word - 4bytes) 4bytes 4bytes)
+
+        (defreg $i)
+        (clear $i)
+
+        (defreg $i-pos) ; No need to clear since we're MSTOREing into it
+
+        (defreg $fn-count)
+        (clear $fn-count)
+        (codecopy-word $fn-count #function-count 2bytes)
+
+        ;; Since loupes are called offchain, we don't have to be execution efficient.
+        ;; Do a simple loop over all function selectors.
+        (loop #find
+          (JUMPI #find/break (EQ (MLOAD $i) $fn-count))
+          (MSTORE $i-pos (ADD (MUL 5bytes (MLOAD $i)) #function-data))
+          (codecopy-word $$ (MLOAD $i-pos) 4bytes)
+          (JUMPI #found (EQ (MLOAD $input) (MLOAD $$)))
+          (MSTORE $i (ADD 1 (MLOAD $i)))
+        )
+        (REVERT 0 0) ; No matching function selector
+
+        #found
+        JUMPDEST
+        (clear $$)
+        (codecopy-word $$ (ADD (MLOAD $i-pos) 4bytes) 1byte) ; Module index
+        (codecopy-word $$ (ADD (MUL 20bytes (MLOAD $$)) #module-data) 20bytes) ; Module address
+        (return (MLOAD $$))
+      )
+
+      #facetAddresses
+      JUMPDEST
+      (scope
+        (defcounter reg-counter)
+        (defreg $$)
+        (codecopy-word $$ #module-count 1byte)
+
+        (defreg $i)
+        (MSTORE $i 0)
+
+        (write/setup)
+
+        (MLOAD $$) ; Put length on stack since we're only working with that one value
+
+        (write 0x20) ; Array data start offset (abi encoding)
+        (write DUP1) ; Array length
+
+        (loop #build-item
+          (JUMPI #build-item/break (EQ (MLOAD $i) DUP1))
+          (codecopy-word $$ (ADD (MUL 20bytes (MLOAD $i)) #module-data) 20bytes)
+          (write (MLOAD $$))
+          (MSTORE $i (ADD 1 (MLOAD $i)))
+        )
+        (returnall)
+      )
+
+      #facetFunctionSelectors
+      JUMPDEST
+      (scope
+        (defcounter reg-counter)
+        (defreg $$)
+        (clear $$)
+
+        (defreg $input)
+        (MSTORE $input (CALLDATALOAD 4))
+
+        (defreg $i)
+        (clear $i)
+
+        (defreg $i-pos) ; No need to clear since we're MSTOREing into it
+
+        (defreg $mod-i) ; Separate working register so we don't have to remember to clear it
+        (clear $mod-i)
+
+        (defreg $mod-addr) ; Separate working register so we don't have to remember to clear it
+        (clear $mod-addr)
+
+        (defreg $fn-count)
+        (clear $fn-count)
+        (codecopy-word $fn-count #function-count 2bytes)
+
+        (defreg $total)
+        (clear $total)
+
+        (write/setup)
+
+        (write 0x20) ; Array data start offset (abi encoding)
+        (write 0)    ; Fill this in later
+
+        ;; Since loupes are called offchain, we don't have to be execution efficient.
+        ;; Do a simple loop over all function selectors.
+        (loop #find
+          (JUMPI #find/break (EQ (MLOAD $i) (MLOAD $fn-count)))
+          (MSTORE $i-pos (ADD (MUL 5bytes (MLOAD $i)) #function-data))
+          (MSTORE $i (ADD 1 (MLOAD $i)))
+
+          (codecopy-word $mod-i (ADD 4bytes (MLOAD $i-pos)) 1byte)
+          (codecopy-word $mod-addr (ADD (MUL 20bytes (MLOAD $mod-i)) #module-data) 20bytes)
+          (JUMPI #find (ISZERO (EQ (MLOAD $mod-addr) (MLOAD $input))))
+
+          (CODECOPY $$ (MLOAD $i-pos) 4bytes) ; bytes4 values are right-padded
+          (write (MLOAD $$))
+          (MSTORE $total (ADD 1 (MLOAD $total)))
+        )
+        (MSTORE (+ 0x20 $ret) (MLOAD $total)) ; Fill in array length
+        (returnall)
+      )
+
+      #facets
+      JUMPDEST
+      (revert) ; TODO
+
+      #nomatch-diamond
+      JUMPDEST
+    `}
+
     REVERT ; No matching function selector
 
     #function-count
@@ -138,6 +295,6 @@ export function makeStaticRouter(modules: StaticRouterModules): string {
     0x${pad(modules.length.toString(16), 2)}
 
     #module-data
-    ${modules.map((module) => `${module.address} ; ${module.name}`).join('\n')}
+    ${modules.sort((a,b) => a.address.localeCompare(b.address)).map((module) => `${module.address} ; ${module.name}`).join('\n')}
   `
 }

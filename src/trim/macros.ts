@@ -61,6 +61,21 @@ export const standardMacros: MacroDefs = {
     return [`${label.name}${xLabel}`]
   },
 
+  'atom/hex'(val) {
+    const [parsed] = this.parseSexp(val)
+    if (parsed.type !== 'literal' || parsed.subtype !== 'hex') {
+      throw new Error(`[trim] atom/hex expects a hex literal`)
+    }
+    return [{ type: 'atom', name: parsed.value }]
+  },
+  'atom/dec'(val) {
+    const [parsed] = this.parseSexp(val)
+    if (parsed.type !== 'literal' || parsed.subtype !== 'hex') {
+      throw new Error(`[trim] atom/dec expects a decimal literal`)
+    }
+    return [{ type: 'atom', name: ''+parseInt(parsed.value, 16) }]
+  },
+
   // Empty definitions for simplifying logic elsewhere
   def() { return [] },
   scope() { return [] },

@@ -55,4 +55,30 @@ o.spec('Trim Features', function () {
     o(foo.returnValue).equals(pad('eeff', 64))
     o(foo.results.execResult.exceptionError).equals(undefined)
   })
+
+  o('local-call', async () => {
+    const source = trim.source`
+      (init-runtime-code)
+      #runtime
+      (defcounter local-call-counter)
+      (def local-call (label ...params)
+        (JUMP label ...params (label/append #local-ret- (atom/dec (local-call-counter))))
+        (label/append #local-ret- (atom/dec (local-call-counter ++)))
+        JUMPDEST)
+
+      (local-call #local-add 0x11 0x22)
+      (return (ADD 1 _))
+
+      #local-add
+      JUMPDEST
+      ADD
+      (JUMP SWAP1)
+    `
+    const vm = makeFullExampleVm({ source })
+    await vm.setup()
+
+    const foo = await vm.accounts[0].call(vm.contractAddr, '0x')
+    o(foo.returnValue).equals(pad('34', 64))
+    o(foo.results.execResult.exceptionError).equals(undefined)
+  })
 })
