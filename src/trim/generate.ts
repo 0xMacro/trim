@@ -198,7 +198,7 @@ function _generateBytecodeAst(exp: SexpNode, ctx: {
   }
 }
 
-export function generateBytecode(ast: BytecodeAstNode[], { opcodes, macros, opcodesMetadata, features }: CompileOptions): string[] {
+export function generateBytecode(ast: BytecodeAstNode[], { opcodes, opcodesMetadata, features }: CompileOptions): string[] {
   const pc = prop(0)
   const inc = (byteCount: number) => pc(pc() + byteCount)
   const labels = {} as Record<string, number>
@@ -227,7 +227,6 @@ export function generateBytecode(ast: BytecodeAstNode[], { opcodes, macros, opco
     else if (node.type === 'op' || node.type === 'literal') {
       return _generateBytecode([node], {
         inc,
-        macros,
         seenTop: () => false,
         level: 0,
         features,
@@ -242,7 +241,6 @@ export function generateBytecode(ast: BytecodeAstNode[], { opcodes, macros, opco
       const trailingBytes: string[] = []
       const bytes = _generateBytecode(node.nodes, {
         inc,
-        macros,
         seenTop,
         level: 0,
         features,
@@ -281,7 +279,6 @@ function _generateBytecode(ast: BytecodeAstNode[], ctx: {
   inc: (byteCount: number) => void
   level: number
   append: (bytes: string) => void
-  macros: MacroDefs
   seenTop: Prop<boolean>
   opcodesByAsm: OpcodesByAsm
   registerLabel: (name: string) => (() => string)
