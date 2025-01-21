@@ -1,6 +1,5 @@
 import { BytecodeAstNode, MacroDefs, MacroFn, SexpNode } from "../types";
 import { keccak256 } from '@ethersproject/keccak256'
-import { createContext, runInNewContext } from 'vm';
 import { autoPad, decToHex } from "../util.js";
 
 export const standardMacros: MacroDefs = {
@@ -104,7 +103,7 @@ function makeMathMacro(options: { direction?: 'ceil' | 'floor' } = {}): MacroFn 
   return function mathMacro (...vals) {
     const validTerms: (string | number)[] = vals.map(term => {
       // Check for math specific terms first since these are not normally valid tokens
-      if (typeof term === 'string' && /^(\+|-|\*|\/)/.test(term)) {
+      if (typeof term === 'string' && /^(\+|-|\*|\/)$/.test(term)) {
         return term
       }
 
@@ -117,14 +116,7 @@ function makeMathMacro(options: { direction?: 'ceil' | 'floor' } = {}): MacroFn 
       return parseInt(result.value, 16)
     })
 
-    const mathExpression = validTerms.join(' ');
-
-    // Sandbox
-    const context = createContext({});
-    let result = runInNewContext(mathExpression, context, {
-      timeout: 100,
-      displayErrors: true
-    });
+    let result = eval(validTerms.join(' '))
 
     if (typeof result !== 'number') {
       // TODO: Better error message (need reverse parser)
