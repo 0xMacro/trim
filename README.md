@@ -64,10 +64,7 @@ const bytecode = trim.compile(trim.source`(ADD 0x00 0x01)`, {
 Here's a template to get started writing a full smart contract with Trim:
 
 ```trim
-(SUB CODESIZE #runtime)
-DUP1
-(CODECOPY 0x00 #runtime _)
-(RETURN 0x00 _)
+(init-runtime-code)
 
 #runtime
 (CALLDATACOPY 0x1c 0x00 0x04)
@@ -241,6 +238,18 @@ With this macro, the following is a template that you can use to start writing a
 
 ```trim
 (init-runtime-code)
+#runtime
+;; TODO: Write code here!
+```
+
+The above is equivalent to:
+
+```trim
+(SUB CODESIZE #runtime)
+DUP1
+(CODECOPY 0x00 #runtime _)
+(RETURN 0x00 _)
+
 #runtime
 ;; TODO: Write code here!
 ```
